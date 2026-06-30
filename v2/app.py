@@ -72,6 +72,9 @@ elif page == "brand_brain":
 elif page == "connections":
     from ui.pages.connections import render
     render()
+elif page == "compliance":
+    from ui.pages.compliance import render
+    render()
 elif page == "settings":
     from ui.pages.settings import render
     render()
