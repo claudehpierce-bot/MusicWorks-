@@ -9,10 +9,11 @@ VIDEO_JOB_TYPES = [
 
 class VideoConnector(BaseConnector):
     name             = "Video Connector"
-    description      = "Routes video generation to Veo, Runway, or Pika"
+    description      = "Routes video generation to Veo or HeyGen"
     icon             = "🎥"
+    task_category    = "video"
     handles          = VIDEO_JOB_TYPES
-    providers        = ["veo"]
+    providers        = ["veo", "heygen"]
     future_providers = ["runway", "pika", "sora"]
 
     def _execute(self, job: dict, provider: str, brand_context: str) -> ConnectorResult:

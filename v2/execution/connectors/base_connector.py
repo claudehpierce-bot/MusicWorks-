@@ -27,36 +27,53 @@ class ConnectorResult:
 
 
 class BaseConnector:
-    """Abstract base for all MusicWorks connectors."""
+    """Abstract base for all MusicWorks connectors.
 
-    name:        str = ""
-    description: str = ""
-    icon:        str = "🔌"
+    V4.2: _select_provider() now delegates to provider_router.route(),
+    which checks API keys, subscription status, overrides, and fallbacks
+    automatically. Subclasses set task_category to enable this.
+    """
+
+    name:          str = ""
+    description:   str = ""
+    icon:          str = "🔌"
+    task_category: str = ""   # e.g. "writing", "video", "graphics" — drives router
 
     # Job types this connector handles
     handles: list[str] = []
 
-    # Ordered list of providers to try (first available wins)
+    # Ordered list of providers to try (legacy fallback list)
     providers: list[str] = []
 
-    # Future providers (not yet integrated)
+    # Future providers (not yet integrated — shown in Connections UI)
     future_providers: list[str] = []
 
     def dispatch(self, job: dict, brand_context: str = "") -> ConnectorResult:
-        """Dispatch job to the best available provider."""
+        """Dispatch job through the intelligent provider router."""
         import time
-        start = time.time()
-        provider = self._select_provider()
-        result = self._execute(job, provider, brand_context)
+        start    = time.time()
+        provider = self._select_provider(job)
+        result   = self._execute(job, provider, brand_context)
         result.generation_time_ms = int((time.time() - start) * 1000)
         result.provider_used = provider
         return result
 
-    def _select_provider(self) -> str:
-        """Return the key of the best available provider."""
-        from execution.connections_store import is_connected
+    def _select_provider(self, job: dict | None = None) -> str:
+        """Return best available provider via router, falling back to legacy list."""
+        from execution.provider_router import route, route_for_job
+
+        # Prefer job-type specific routing if job provided
+        if job and job.get("job_type"):
+            return route_for_job(job["job_type"])
+
+        # Connector-level task category routing
+        if self.task_category:
+            return route(self.task_category)
+
+        # Legacy: first available from providers list
+        from execution.provider_router import is_available
         for p in self.providers:
-            if is_connected(p):
+            if is_available(p):
                 return p
         return self.providers[0] if self.providers else "mock"
 
@@ -64,6 +81,10 @@ class BaseConnector:
         raise NotImplementedError
 
     def available_provider(self) -> str | None:
-        """Return first available provider key, or None."""
-        from execution.connections_store import is_connected
-        return next((p for p in self.providers if is_connected(p)), None)
+        """Return the currently routed provider key, or None if mock."""
+        from execution.provider_router import route, is_available
+        category = self.task_category
+        if not category:
+            return next((p for p in self.providers if is_available(p)), None)
+        selected = route(category)
+        return selected if selected != "mock" else None

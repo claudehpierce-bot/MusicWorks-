@@ -149,6 +149,10 @@ def render():
 
     st.markdown("<div style='margin-top:2rem;'></div>", unsafe_allow_html=True)
 
+    # ── Media Factory Plan ────────────────────────────────────────────────────
+    render_html('<div class="mw-section-label">Media Factory Plan — How MusicWorks Will Build This Release</div>')
+    _render_factory_plan()
+
     # ── Worker status panel ───────────────────────────────────────────────────
     render_html('<div class="mw-section-label">AI Worker Status</div>')
     _render_worker_panel()
@@ -250,6 +254,52 @@ def _render_job_row(job: dict, artist_id: str):
         <span style="font-size:11px; color:{color}; font-weight:600; min-width:60px; text-align:right;">{STATUS_LABELS.get(status, status)}</span>
     </div>
     """)
+
+
+def _render_factory_plan():
+    from execution.provider_router import get_factory_plan, is_available
+    from execution.provider_registry import PROVIDER_MAP
+
+    plan = get_factory_plan()
+    if not plan:
+        return
+
+    rows_per_row = 3
+    for row_start in range(0, len(plan), rows_per_row):
+        row   = plan[row_start:row_start + rows_per_row]
+        cols  = st.columns(len(row))
+        for col, entry in zip(cols, row):
+            is_mock = entry["is_mock"]
+            fb_used = entry["fallback_used"]
+            has_override = entry["has_override"]
+
+            if is_mock:
+                card_color = "#6A6460"
+                badge = '<span style="background:#2A2A2A; color:#6A6460; font-size:10px; padding:2px 8px; border-radius:10px;">MOCK</span>'
+            elif has_override:
+                card_color = "#9B89D4"
+                badge = '<span style="background:#2D1B69; color:#9B89D4; font-size:10px; padding:2px 8px; border-radius:10px;">OVERRIDE</span>'
+            elif fb_used:
+                card_color = "#F59E0B"
+                badge = '<span style="background:#2A1F00; color:#F59E0B; font-size:10px; padding:2px 8px; border-radius:10px;">FALLBACK</span>'
+            else:
+                card_color = "#22C55E"
+                badge = '<span style="background:#0A2A1A; color:#22C55E; font-size:10px; padding:2px 8px; border-radius:10px;">READY</span>'
+
+            with col:
+                render_html(f"""
+                <div class="mw-card" style="padding:0.875rem; border-top:3px solid {card_color}; margin-bottom:0.75rem; text-align:center;">
+                    <div style="font-size:18px; margin-bottom:4px;">{entry['icon']}</div>
+                    <div style="font-size:11px; font-weight:700; color:#F0EDE8; margin-bottom:4px;">{entry['label']}</div>
+                    <div style="font-size:13px; margin-bottom:6px;">{entry['selected_icon']}</div>
+                    <div style="font-size:11px; color:{card_color}; font-weight:600; margin-bottom:6px;">{entry['selected_name']}</div>
+                    {badge}
+                </div>
+                """)
+
+    st.caption("Factory Plan auto-selects the best connected provider for each task. Override in Media Toolbox → Routing Table.")
+    if st.button("⚙  Manage Providers & Routing", key="ms_goto_toolbox", use_container_width=False):
+        navigate_to("connections")
 
 
 def _render_worker_panel():

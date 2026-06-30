@@ -8,10 +8,11 @@ WRITING_JOB_TYPES = [
 
 class WritingConnector(BaseConnector):
     name             = "Writing Connector"
-    description      = "Routes text generation to Claude (blog, email, press releases, outreach)"
+    description      = "Routes text generation to Claude or Perplexity"
     icon             = "✍️"
+    task_category    = "writing"
     handles          = WRITING_JOB_TYPES
-    providers        = ["claude"]
+    providers        = ["claude", "perplexity"]
     future_providers = ["gpt4", "gemini"]
 
     def _execute(self, job: dict, provider: str, brand_context: str) -> ConnectorResult:

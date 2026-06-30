@@ -50,7 +50,7 @@ def nav_sidebar() -> str:
             ("🚀", "Publishing",       "publishing"),
             ("📊", "Analytics",        "analytics"),
             ("🧠", "Brand Brain",      "brand_brain"),
-            ("🔌", "Connections",      "connections"),
+            ("🧰", "Media Toolbox",    "connections"),
             ("⚙",  "Settings",         "settings"),
         ]
 

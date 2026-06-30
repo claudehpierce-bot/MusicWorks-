@@ -6,11 +6,12 @@ VOICE_JOB_TYPES = ["behind_scenes"]
 
 class VoiceConnector(BaseConnector):
     name             = "Voice Connector"
-    description      = "Routes voice narration to ElevenLabs and avatar video to Hedra"
+    description      = "Routes talking-avatar jobs to Hedra or HeyGen; voice to ElevenLabs"
     icon             = "🔊"
+    task_category    = "talking_avatar"
     handles          = VOICE_JOB_TYPES
-    providers        = ["hedra", "elevenlabs"]
-    future_providers = ["heygen", "synthesia"]
+    providers        = ["hedra", "heygen", "elevenlabs"]
+    future_providers = ["synthesia"]
 
     def _execute(self, job: dict, provider: str, brand_context: str) -> ConnectorResult:
         from execution.workers import get_worker

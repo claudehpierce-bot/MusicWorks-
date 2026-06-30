@@ -6,11 +6,12 @@ IMAGE_JOB_TYPES = ["quote_card", "story_slides", "thumbnail_set", "countdown"]
 
 class ImageConnector(BaseConnector):
     name             = "Image Connector"
-    description      = "Routes design briefs to Canva or future AI image providers"
+    description      = "Routes design and image jobs to Canva, Leonardo, or Imagen"
     icon             = "🎨"
+    task_category    = "graphics"
     handles          = IMAGE_JOB_TYPES
-    providers        = ["canva"]
-    future_providers = ["adobe_firefly", "midjourney", "imagen"]
+    providers        = ["canva", "leonardo", "google_imagen"]
+    future_providers = ["adobe_firefly", "midjourney"]
 
     def _execute(self, job: dict, provider: str, brand_context: str) -> ConnectorResult:
         from execution.workers import get_worker
