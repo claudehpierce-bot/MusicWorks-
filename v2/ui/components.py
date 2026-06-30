@@ -39,17 +39,18 @@ def nav_sidebar() -> str:
 
         NAV_ITEMS = [
             ("🏠", "Home",             "home"),
-            ("🎬", "Media Studio",     "media_studio"),
+            ("🏭", "Media Factory",    "media_studio"),
             ("👥", "Artists",          "artists"),
             ("📋", "Production",       "production"),
             ("📅", "Calendar",         "calendar"),
             ("🎵", "Projects",         "projects"),
             ("🗄️", "Studio",           "studio"),
-            ("📦", "Campaigns",        "campaigns"),
+            ("📦", "Releases",         "campaigns"),
             ("✅", "Asset Review",     "approval"),
             ("🚀", "Publishing",       "publishing"),
             ("📊", "Analytics",        "analytics"),
             ("🧠", "Brand Brain",      "brand_brain"),
+            ("🔌", "Connections",      "connections"),
             ("⚙",  "Settings",         "settings"),
         ]
 

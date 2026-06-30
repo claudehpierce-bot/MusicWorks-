@@ -1,4 +1,4 @@
-"""MusicWorks™ V4 — Media Studio: mission control dashboard."""
+"""MusicWorks™ V4.1 — Media Factory™: mission control dashboard."""
 import sys
 from pathlib import Path
 from datetime import datetime, timezone
@@ -13,7 +13,7 @@ from execution.media_calendar import get_upcoming_jobs
 
 
 def render():
-    page_header("Media Studio™", "The artist finishes the music. MusicWorks finishes the release.", "🎬")
+    page_header("Media Factory™", "The artist finishes the music. MusicWorks finishes the release.", "🏭")
 
     artists = list_artists()
     if not artists:
@@ -74,21 +74,40 @@ def render():
 
     st.markdown("<div style='margin-top:2rem;'></div>", unsafe_allow_html=True)
 
-    # ── Stats row ─────────────────────────────────────────────────────────────
-    stats  = queue_stats(sel_id)
-    total  = stats.get("total", 0)
-    pending_n  = stats.get("pending", 0) + stats.get("queued", 0)
-    review_n   = stats.get("review", 0)
-    approved_n = stats.get("approved", 0)
-    published_n = stats.get("published", 0)
+    # ── Media Factory live stats ───────────────────────────────────────────────
+    from datetime import date as _date
+    stats       = queue_stats(sel_id)
+    all_jobs_ms = list_jobs(sel_id)
+    total       = stats.get("total", 0)
+    generating_n = stats.get("generating", 0)
+    review_n     = stats.get("review", 0)
+    approved_n   = stats.get("approved", 0)
+    published_n  = stats.get("published", 0)
+    pending_n    = stats.get("pending", 0) + stats.get("queued", 0)
+    today_str    = str(_date.today())
+    completed_today = sum(1 for j in all_jobs_ms if (j.get("updated_at","") or "")[:10] == today_str
+                         and j.get("status") in ("approved","published"))
+    publishing_today = sum(1 for j in all_jobs_ms if (j.get("scheduled_date","") or "")[:10] == today_str)
 
-    render_html('<div class="mw-section-label">Production Overview</div>')
-    c1, c2, c3, c4, c5 = st.columns(5)
-    _stat_card(c1, "Total Jobs",  str(total),       "#9B89D4")
-    _stat_card(c2, "In Queue",    str(pending_n),   "#F59E0B")
-    _stat_card(c3, "In Review",   str(review_n),    "#3B82F6")
-    _stat_card(c4, "Approved",    str(approved_n),  "#22C55E")
-    _stat_card(c5, "Published",   str(published_n), "#10B981")
+    # Connector health
+    from execution.connectors import ALL_CONNECTORS
+    from execution.connections_store import is_connected
+    active_workers = sum(1 for c in ALL_CONNECTORS if c.available_provider())
+    total_workers  = len(ALL_CONNECTORS)
+
+    # Release health: % of jobs done
+    release_health_pct = int((approved_n + published_n) / total * 100) if total > 0 else 0
+
+    render_html('<div class="mw-section-label">Media Factory — Live Status</div>')
+
+    f1, f2, f3, f4, f5, f6, f7 = st.columns(7)
+    _stat_card(f1, "Jobs Running",      str(generating_n),              "#9B89D4")
+    _stat_card(f2, "Workers Active",    f"{active_workers}/{total_workers}", "#D4A853")
+    _stat_card(f3, "Completed Today",   str(completed_today),           "#22C55E")
+    _stat_card(f4, "Ready for Review",  str(review_n),                  "#3B82F6")
+    _stat_card(f5, "Publishing Today",  str(publishing_today),          "#F59E0B")
+    _stat_card(f6, "Release Health",    f"{release_health_pct}%",       "#10B981")
+    _stat_card(f7, "Total Jobs",        str(total),                     "#6A6460")
 
     st.markdown("<div style='margin-top:2rem;'></div>", unsafe_allow_html=True)
 

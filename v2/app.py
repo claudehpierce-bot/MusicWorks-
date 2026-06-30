@@ -69,6 +69,9 @@ elif page == "analytics":
 elif page == "brand_brain":
     from ui.pages.brand_brain import render
     render()
+elif page == "connections":
+    from ui.pages.connections import render
+    render()
 elif page == "settings":
     from ui.pages.settings import render
     render()

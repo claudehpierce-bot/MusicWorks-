@@ -245,7 +245,7 @@ def _render_asset_card(asset: dict, lib: AssetLibrary):
 # ── Main render ───────────────────────────────────────────────────────────────
 
 def render():
-    page_header("Approval Queue", "Nothing publishes until you approve it.", "✅")
+    page_header("Asset Review", "Nothing publishes until you approve it.", "✅")
 
     try:
         lib = _get_library()
@@ -254,21 +254,24 @@ def render():
         st.error(f"Could not connect to asset database: {e}")
         return
 
+    # ── V4 Production Queue review tab ───────────────────────────────────────
+    _render_v4_review_section()
+
     if not campaign_ids:
         render_html("""
-        <div class="mw-card" style="text-align:center; padding:3rem; color:#8A8480;">
-            <div style="font-size:40px; margin-bottom:1rem;">✅</div>
-            <div style="font-size:18px; color:#F0EDE8; margin-bottom:0.5rem;">No campaigns yet</div>
-            <div>Build your first campaign to see assets here.</div>
+        <div class="mw-card" style="text-align:center; padding:2rem; color:#8A8480; margin-top:1rem;">
+            <div style="font-size:18px; color:#F0EDE8; margin-bottom:0.5rem;">No legacy release assets yet</div>
+            <div style="font-size:13px;">Use the Production Queue to generate assets for your releases.</div>
         </div>
         """)
-        if st.button("➕  New Project", type="primary"):
-            st.session_state.wizard_step = 0
-            st.session_state.wizard_data = {}
-            navigate_to("wizard")
+        if st.button("📋  Go to Production Queue", type="primary"):
+            navigate_to("production")
         return
 
-    # ── Campaign selector ─────────────────────────────────────────────────────
+    st.divider()
+    st.markdown("<div class='mw-section-label'>Legacy Release Assets</div>", unsafe_allow_html=True)
+
+    # ── Release selector ─────────────────────────────────────────────────────
     default_cid = st.session_state.get("approval_campaign_id", campaign_ids[-1])
     if default_cid not in campaign_ids:
         default_cid = campaign_ids[-1]
@@ -276,7 +279,7 @@ def render():
 
     col_sel, col_stats = st.columns([2, 2])
     with col_sel:
-        selected_campaign = st.selectbox("Campaign:", campaign_ids, index=idx)
+        selected_campaign = st.selectbox("Release (legacy):", campaign_ids, index=idx)
         st.session_state.approval_campaign_id = selected_campaign
 
     stats = lib.get_campaign_stats(selected_campaign)
@@ -340,3 +343,170 @@ def render():
                     st.caption(f"Notes: {entry['founder_notes']}")
 
     st.caption("Human-led. AI-assisted. Scripture-rooted. Every decision is logged permanently.")
+
+
+# ── V4 Production Queue Review ────────────────────────────────────────────────
+
+def _render_v4_review_section():
+    """Review panel for V4 production queue jobs (in-review and approved)."""
+    import json as _json
+    from execution.production_queue import list_jobs, update_job_status, STATUS_COLOR, STATUS_LABELS, PHASE_LABELS
+    from execution.connectors.publishing_connector import PLATFORM_LABEL, PLATFORM_ICON
+    from brand_brain.artist_library import list_artists
+
+    artists = list_artists()
+    if not artists:
+        return
+
+    render_html('<div class="mw-section-label">Release Assets — Production Queue</div>')
+
+    artist_names = [a["artist_name"] for a in artists]
+    artist_ids   = [a["artist_id"]   for a in artists]
+    sel_idx  = st.selectbox("Artist:", range(len(artist_names)),
+                             format_func=lambda i: artist_names[i], key="ar_v4_artist")
+    sel_id   = artist_ids[sel_idx]
+
+    all_jobs = list_jobs(sel_id)
+    review_jobs   = [j for j in all_jobs if j.get("status") == "review"]
+    approved_jobs = [j for j in all_jobs if j.get("status") == "approved"]
+    published_jobs = [j for j in all_jobs if j.get("status") == "published"]
+
+    # Stats
+    m1, m2, m3, m4 = st.columns(4)
+    m1.metric("In Review",  len(review_jobs))
+    m2.metric("Approved",   len(approved_jobs))
+    m3.metric("Published",  len(published_jobs))
+    m4.metric("Total",      len(all_jobs))
+
+    if review_jobs:
+        st.warning(f"{len(review_jobs)} asset(s) waiting for your review.")
+
+    gen_dir = Path(__file__).parent.parent.parent / "data" / "generated" / sel_id
+
+    # Show review jobs first, then approved
+    for job in review_jobs + approved_jobs:
+        _render_v4_job_review(job, sel_id, gen_dir)
+
+    if not review_jobs and not approved_jobs:
+        render_html("""
+        <div class="mw-card" style="padding:1.5rem; text-align:center; color:#8A8480; margin-bottom:1rem;">
+            <div style="font-size:13px;">No assets in review yet.</div>
+            <div style="font-size:12px; margin-top:4px;">Generate content in the Production Queue to populate this section.</div>
+        </div>
+        """)
+        col_btn, _ = st.columns([1, 3])
+        with col_btn:
+            if st.button("📋  Production Queue →", key="ar_goto_prod"):
+                navigate_to("production")
+
+
+def _render_v4_job_review(job: dict, artist_id: str, gen_dir: Path):
+    """Render a single V4 production queue job for review."""
+    import json as _json
+    from execution.production_queue import update_job_status, PHASE_LABELS, STATUS_COLOR, STATUS_LABELS
+
+    jid    = job["job_id"]
+    icon   = job.get("job_icon", "📄")
+    label  = job.get("job_label", "")
+    phase  = PHASE_LABELS.get(job.get("phase", ""), "")
+    status = job.get("status", "pending")
+    color  = STATUS_COLOR.get(status, "#6A6460")
+    slabel = STATUS_LABELS.get(status, status)
+
+    status_dot = {"review": "🟡", "approved": "🟢", "rejected": "🔴"}.get(status, "⚪")
+
+    with st.expander(f"{status_dot}  {icon}  {label}  ·  {phase}", expanded=(status == "review")):
+        # ── Metadata strip ────────────────────────────────────────────────────
+        meta_file = gen_dir / f"{jid}_meta.json"
+        meta = {}
+        if meta_file.exists():
+            try:
+                meta = _json.loads(meta_file.read_text(encoding="utf-8"))
+            except Exception:
+                pass
+
+        if meta:
+            col_m1, col_m2, col_m3, col_m4 = st.columns(4)
+            col_m1.caption(f"Connector: {meta.get('connector','')}")
+            col_m2.caption(f"Provider: {meta.get('provider_used','mock')}")
+            col_m3.caption(f"Worker: {meta.get('worker_used','')}")
+            col_m4.caption(f"Time: {meta.get('generation_time_ms',0)}ms")
+            if meta.get("mock"):
+                render_html('<span style="background:#F59E0B22; color:#F59E0B; font-size:11px; padding:2px 8px; border-radius:12px; font-weight:600;">MOCK OUTPUT</span>')
+            if meta.get("prompt_used"):
+                with st.expander("Prompt used", expanded=False):
+                    st.code(meta["prompt_used"], language=None)
+
+        # ── Content preview ───────────────────────────────────────────────────
+        out_file = gen_dir / f"{jid}.md"
+        if out_file.exists():
+            content = out_file.read_text(encoding="utf-8")
+            st.markdown(content[:5000] + ("…" if len(content) > 5000 else ""))
+
+            col_dl, _ = st.columns([1, 4])
+            with col_dl:
+                st.download_button(
+                    "⬇ Download",
+                    content.encode("utf-8"),
+                    file_name=f"{label.replace(' ','_')}_{jid}.md",
+                    mime="text/markdown",
+                    key=f"dlv4_{jid}",
+                )
+        else:
+            render_html('<div style="font-size:13px; color:#8A8480; padding:1rem;">No generated content yet.</div>')
+
+        # ── Version history ───────────────────────────────────────────────────
+        versions = job.get("versions", [])
+        if versions:
+            with st.expander(f"Version History ({len(versions)} version(s))", expanded=False):
+                for v in reversed(versions):
+                    st.caption(f"v{v.get('version','')} — {v.get('at','')[:16]}")
+
+        st.divider()
+
+        # ── Decision buttons ──────────────────────────────────────────────────
+        if status == "review":
+            col_a, col_b, col_c, col_d = st.columns(4)
+            with col_a:
+                if st.button("✓ Approve", key=f"v4appr_{jid}", type="primary", use_container_width=True):
+                    update_job_status(artist_id, jid, "approved")
+                    st.success("Approved — asset moves to Publishing Queue.")
+                    st.rerun()
+            with col_b:
+                if st.button("↺ Re-render", key=f"v4rr_{jid}", use_container_width=True):
+                    update_job_status(artist_id, jid, "pending")
+                    st.info("Reset to Pending. Return to Production Queue to regenerate.")
+                    st.rerun()
+            with col_c:
+                rev_key = f"v4rev_show_{jid}"
+                if st.button("✏ Request Revision", key=f"v4rev_btn_{jid}", use_container_width=True):
+                    st.session_state[rev_key] = not st.session_state.get(rev_key, False)
+                if st.session_state.get(rev_key):
+                    with st.form(f"v4rev_form_{jid}"):
+                        notes = st.text_area("What needs to change?", height=80)
+                        if st.form_submit_button("Submit"):
+                            if notes.strip():
+                                from execution.production_queue import get_job, save_job
+                                j = get_job(artist_id, jid)
+                                if j:
+                                    j["notes"] = notes.strip()
+                                    save_job(j)
+                                update_job_status(artist_id, jid, "pending")
+                                st.session_state.pop(rev_key, None)
+                                st.rerun()
+            with col_d:
+                if st.button("✗ Reject", key=f"v4rej_{jid}", use_container_width=True):
+                    update_job_status(artist_id, jid, "rejected")
+                    st.rerun()
+
+        elif status == "approved":
+            render_html(f'<div style="color:#22C55E; font-size:13px; font-weight:600;">✓ Approved — {job.get("approved_at","")[:10]}</div>')
+            col_pub, col_rev = st.columns([1, 1])
+            with col_pub:
+                if st.button("🚀  Add to Publishing Queue", key=f"v4pub_{jid}", type="primary", use_container_width=True):
+                    navigate_to("publishing")
+            with col_rev:
+                if st.button("↺ Re-render", key=f"v4rr2_{jid}", use_container_width=True):
+                    update_job_status(artist_id, jid, "pending")
+                    st.info("Reset to Pending.")
+                    st.rerun()

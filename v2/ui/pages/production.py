@@ -14,6 +14,7 @@ from execution.production_queue import (
 from execution.media_calendar import generate_calendar
 from execution.distrokid_store import list_releases, upsert_release, get_release
 from execution.workers import get_worker
+from execution.connectors import dispatch_job, get_connector
 
 
 def render():
@@ -160,55 +161,80 @@ def render():
                                         format_func=lambda i: job_labels[i], key="gen_job_sel")
             sel_job = pending_jobs[sel_job_idx]
 
+            # Show connector routing info
+            connector  = get_connector(sel_job.get("job_type", ""))
             worker_key = sel_job.get("worker", "claude")
-            worker = get_worker(worker_key)
+            worker     = get_worker(worker_key)
+            avail_prov = connector.available_provider()
 
-            if worker:
-                col_info, col_act = st.columns([3, 1])
-                with col_info:
-                    render_html(f"""
-                    <div class="mw-card" style="padding:1rem;">
-                        <div style="font-size:13px; color:#8A8480; margin-bottom:6px;">Worker assigned</div>
-                        <div style="font-size:22px;">{worker.icon}  <span style="font-size:16px; font-weight:700; color:#F0EDE8;">{worker.name}</span></div>
-                        <div style="font-size:12px; color:#C8C4BE; margin-top:4px;">{worker.description}</div>
-                        <div style="font-size:12px; color:#8A8480; margin-top:6px;">Estimated time: {worker.estimate_time(sel_job)}</div>
-                        <div style="margin-top:8px;">{worker.status_pill()}</div>
+            col_info, col_act = st.columns([3, 1])
+            with col_info:
+                render_html(f"""
+                <div class="mw-card" style="padding:1rem;">
+                    <div style="font-size:11px; color:#8A8480; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:6px;">Routing</div>
+                    <div style="display:flex; align-items:center; gap:12px; margin-bottom:8px;">
+                        <div style="font-size:18px;">{connector.icon}</div>
+                        <div>
+                            <div style="font-size:13px; font-weight:700; color:#F0EDE8;">{connector.name}</div>
+                            <div style="font-size:11px; color:#8A8480;">{connector.description}</div>
+                        </div>
                     </div>
-                    """)
-                with col_act:
-                    extra_notes = st.text_area("Additional notes:", height=100, key=f"gen_notes_{sel_job['job_id']}")
+                    <div style="font-size:12px; color:#8A8480; margin-top:4px;">
+                        Provider: <span style="color:{'#22C55E' if avail_prov else '#F59E0B'}; font-weight:600;">
+                        {'● ' + avail_prov if avail_prov else '⚠ None configured — will use mock output'}</span>
+                    </div>
+                    {"<div style='font-size:11px; color:#6A6460; margin-top:4px;'>Future providers: " + ', '.join(connector.future_providers[:3]) + "</div>" if connector.future_providers else ""}
+                </div>
+                """)
+            with col_act:
+                extra_notes = st.text_area("Additional notes:", height=100, key=f"gen_notes_{sel_job['job_id']}")
 
             st.markdown("<div style='margin-top:0.75rem;'></div>", unsafe_allow_html=True)
 
-            if st.button("🤖  Generate", type="primary", key=f"gen_btn_{sel_job['job_id']}"):
-                if not worker:
-                    st.error("No worker configured for this job type.")
+            if st.button("🤖  Generate via Connector", type="primary", key=f"gen_btn_{sel_job['job_id']}"):
+                brain = load_artist(sel_id)
+                brand_ctx = _build_brand_context(brain)
+                if extra_notes:
+                    sel_job = dict(sel_job)
+                    sel_job["notes"] = extra_notes
+
+                jid = sel_job["job_id"]
+                update_job_status(sel_id, jid, "generating")
+                with st.spinner(f"{connector.icon} {connector.name} dispatching…"):
+                    result = dispatch_job(sel_job, brand_context=brand_ctx)
+
+                if result.success:
+                    out_dir = Path(__file__).parent.parent.parent / "data" / "generated" / sel_id
+                    out_dir.mkdir(parents=True, exist_ok=True)
+                    out_file = out_dir / f"{jid}.md"
+                    out_file.write_text(result.output_text, encoding="utf-8")
+
+                    # Save generation metadata alongside output
+                    meta_file = out_dir / f"{jid}_meta.json"
+                    import json as _json
+                    from datetime import datetime as _dt, timezone as _tz
+                    meta_file.write_text(_json.dumps({
+                        "job_id":         jid,
+                        "connector":      connector.name,
+                        "provider_used":  result.provider_used,
+                        "worker_used":    result.worker_used,
+                        "prompt_used":    result.prompt_used,
+                        "tokens_used":    result.tokens_used,
+                        "generation_time_ms": result.generation_time_ms,
+                        "mock":           result.mock,
+                        "generated_at":   _dt.now(_tz.utc).isoformat(),
+                    }, indent=2), encoding="utf-8")
+
+                    update_job_status(sel_id, jid, "review")
+                    mock_badge = " (mock output)" if result.mock else f" via {result.provider_used}"
+                    st.success(f"Generated{mock_badge} in {result.generation_time_ms}ms. Job → Review.")
+                    st.markdown("---")
+                    st.markdown(result.output_text[:6000])
+                    if result.metadata:
+                        st.caption(f"Metadata: {result.metadata}")
                 else:
-                    brain = load_artist(sel_id)
-                    brand_ctx = _build_brand_context(brain)
-                    if extra_notes:
-                        sel_job = dict(sel_job)
-                        sel_job["notes"] = extra_notes
-
-                    with st.spinner(f"{worker.icon} {worker.name} generating…"):
-                        result = worker.generate(sel_job, brand_context=brand_ctx)
-
-                    if result.success:
-                        # Save output text
-                        out_dir = Path(__file__).parent.parent.parent / "data" / "generated" / sel_id
-                        out_dir.mkdir(parents=True, exist_ok=True)
-                        out_file = out_dir / f"{sel_job['job_id']}.md"
-                        out_file.write_text(result.output_text, encoding="utf-8")
-
-                        update_job_status(sel_id, sel_job["job_id"], "review")
-                        mock_badge = " (mock)" if result.mock else ""
-                        st.success(f"Generated{mock_badge}. Job moved to Review.")
-                        st.markdown("---")
-                        st.markdown(result.output_text)
-                        if result.metadata:
-                            st.caption(str(result.metadata))
-                    else:
-                        st.error(f"Generation failed: {result.error}")
+                    update_job_status(sel_id, jid, "pending")
+                    st.error(f"Generation failed: {result.error}")
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
