@@ -1,0 +1,560 @@
+"""
+Static mock data for all 5 agents.
+
+Every dict here matches the exact JSON shape the real agent would return.
+Source: sample_hlangana_campaign_package.md (Sprint 3 simulation).
+Used when MOCK_MODE=true or --mock flag is passed to main.py.
+No external calls are made from this file.
+"""
+from contracts.models import CampaignPlan
+
+# ── Campaign Agent ─────────────────────────────────────────────────────────────
+
+CAMPAIGN_OUTPUT = {
+    "campaign_id": "hlangana-blitz-launch-001",
+    "campaign_name": "HLANGANA — Kingdom Word Short #001 Launch",
+    "campaign_mode": "blitz",
+    "campaign_goal": (
+        "Introduce the word HLANGANA and the Kingdom Words series to new audiences "
+        "while creating devotional depth for existing listeners. Launch alongside the "
+        "Becoming Vol. 1 release."
+    ),
+    "platforms": ["instagram_reels", "youtube_shorts", "tiktok", "facebook_reels"],
+    "content_calendar": [
+        {
+            "date": "2026-07-03",
+            "time_est": "8:30 AM",
+            "platform": "Instagram Reels",
+            "asset_type": "short_form_video",
+            "notes": "HLANGANA Kingdom Word Short #001 — launch post",
+        },
+        {
+            "date": "2026-07-03",
+            "time_est": "8:30 AM",
+            "platform": "YouTube Shorts",
+            "asset_type": "short_form_video",
+            "notes": "HLANGANA Kingdom Word Short #001 — launch post",
+        },
+        {
+            "date": "2026-07-03",
+            "time_est": "9:00 AM",
+            "platform": "TikTok",
+            "asset_type": "short_form_video",
+            "notes": "Staggered 30 min from Instagram/YouTube to allow monitoring",
+        },
+        {
+            "date": "2026-07-03",
+            "time_est": "10:00 AM",
+            "platform": "Facebook Reels",
+            "asset_type": "short_form_video",
+            "notes": "Facebook church demographic peaks mid-morning",
+        },
+        {
+            "date": "2026-07-03",
+            "time_est": "3:00 PM",
+            "platform": "All platforms",
+            "asset_type": "engagement_check",
+            "notes": "Reply to early comments — algorithm reward window",
+        },
+        {
+            "date": "2026-07-05",
+            "time_est": "8:00 AM",
+            "platform": "Website/Blog",
+            "asset_type": "blog_post",
+            "notes": "Saturday morning — devotional reading time",
+        },
+        {
+            "date": "2026-07-05",
+            "time_est": "10:00 AM",
+            "platform": "Email",
+            "asset_type": "email_devotional",
+            "notes": "HLANGANA devotional sequence — send to list",
+        },
+        {
+            "date": "2026-07-07",
+            "time_est": "10:00 AM",
+            "platform": "Media Outreach",
+            "asset_type": "press_release",
+            "notes": "Monday morning press window — gospel media distribution",
+        },
+        {
+            "date": "2026-07-10",
+            "time_est": "9:00 AM",
+            "platform": "Instagram",
+            "asset_type": "behind_the_song",
+            "notes": "1-week post-launch — 'Why I chose a Zulu word'",
+        },
+    ],
+    "risk_log": [
+        {
+            "risk_id": "RISK-001",
+            "severity": "low",
+            "description": "Streaming link must be live by July 3 — pre-save link needed before July 3.",
+            "mitigation": "Use pre-save link in all pre-launch captions. Confirm streaming link is live by midnight July 2.",
+            "status": "open",
+            "requires_founder_action": True,
+            "founder_action": "Confirm streaming pre-save link is active and placed in bio before July 1.",
+        },
+        {
+            "risk_id": "RISK-002",
+            "severity": "medium",
+            "description": "HLANGANA pronunciation — non-English word may be mispronounced in video.",
+            "mitigation": "Confirm pronunciation guide (H-La-Nga-Na) with native Zulu speaker before production.",
+            "status": "open",
+            "requires_founder_action": True,
+            "founder_action": "Confirm pronunciation is correct and burned into the video caption/subtitle layer.",
+        },
+        {
+            "risk_id": "RISK-003",
+            "severity": "low",
+            "description": "July 3 = US Independence Day eve. Potential reduced US engagement.",
+            "mitigation": (
+                "Primary diaspora audience (UK, West Africa, Caribbean) is entirely unaffected. "
+                "US launch timing is acceptable."
+            ),
+            "status": "mitigated",
+            "requires_founder_action": False,
+            "founder_action": "",
+        },
+    ],
+    "ministry_angle": (
+        "HLANGANA speaks directly to the post-pandemic Church's struggle with reconnection. "
+        "The devotional guide and church outreach blurb activate pastors as distribution partners. "
+        "Every piece of content ends with an invitation to community, not just a call to stream."
+    ),
+}
+
+
+def get_campaign_plan(song, mode: str) -> CampaignPlan:
+    data = {**CAMPAIGN_OUTPUT, "campaign_mode": mode}
+    return CampaignPlan(
+        campaign_id=data["campaign_id"],
+        campaign_name=data["campaign_name"],
+        campaign_mode=data["campaign_mode"],
+        campaign_goal=data["campaign_goal"],
+        platforms=data["platforms"],
+        content_calendar=data["content_calendar"],
+        risk_log=data["risk_log"],
+        ministry_angle=data["ministry_angle"],
+        song_id=song.song_id,
+    )
+
+
+# ── Social Media Agent ─────────────────────────────────────────────────────────
+
+SOCIAL_MEDIA_OUTPUT = {
+    "instagram": {
+        "caption": (
+            "Do you know this word?\n\n"
+            "HLANGANA (H-La-Nga-Na)\n\n"
+            "It's a Zulu word that means: GATHER TOGETHER.\n\n"
+            "And the Bible speaks directly to this — Hebrews 10:25 says:\n"
+            '"not giving up meeting together, as some are in the habit of doing, but\n'
+            'encouraging one another — and all the more as you see the Day approaching."\n\n'
+            "The African Church has always known something the digital age keeps trying to\n"
+            "forget: you cannot do this alone.\n\n"
+            "HLANGANA is a reminder that gathering isn't optional. It's a command wrapped\n"
+            "in a promise.\n\n"
+            "This is the first song on Becoming Vol. 1 — an album about the journey of\n"
+            "becoming who God made you to be, together with the people He placed around you.\n\n"
+            "🎵 Stream HLANGANA — link in bio\n"
+            "📖 Download the free 7-day devotional guide — link in bio\n\n"
+            "This is Kingdom Word #001 — follow for more words that unlock the Bible."
+        ),
+        "hashtags": [
+            "#HLANGANA", "#KingdomWords", "#GatherTogether", "#Hebrews1025",
+            "#FireAndFlowGospel", "#BecomingVol1", "#AfroGospel", "#GospelMusic",
+            "#AfricanWorship", "#DiasporaFaith", "#ZuluWord", "#GospelRelease2026",
+            "#ChristianMusic", "#BibleVerse", "#GospelArtist", "#NewGospelMusic",
+            "#WordOfGod", "#GospelMovement", "#FaithCommunity", "#ChurchFamily",
+        ],
+        "pinned_comment": (
+            "📖 Hebrews 10:25 — \"not giving up meeting together, as some are in the habit\n"
+            "of doing, but encouraging one another — and all the more as you see the Day\n"
+            "approaching.\"\n\n"
+            "What does gathering look like for you this season? Let us know below. ⬇️"
+        ),
+        "posting_time_recommendation": "2026-07-03 8:30 AM EST",
+        "posting_time_rationale": "Hits US morning + UK afternoon + West Africa afternoon simultaneously",
+    },
+    "tiktok": {
+        "caption": (
+            "This Zulu word is in the Bible 🤯\n\n"
+            "HLANGANA = Gather Together\n\n"
+            "Hebrews 10:25 — do you know it?"
+        ),
+        "hashtags": [
+            "#HLANGANA", "#KingdomWords", "#GospelMusic", "#AfroGospel",
+            "#Hebrews1025", "#BibleTok", "#ChristianTikTok", "#NewMusic",
+        ],
+        "first_comment": (
+            "Reply: \"I need to know more Kingdom Words\" and I'll drop the next one in your\n"
+            "comments 👇 Hebrews 10:25 — not giving up meeting together. This season,\n"
+            "who are you gathering with?"
+        ),
+        "posting_time_recommendation": "2026-07-03 9:00 AM EST",
+        "posting_time_rationale": "30-minute stagger from Instagram allows monitoring of early engagement",
+    },
+    "youtube": {
+        "title": 'HLANGANA Means "Gather Together" — Kingdom Word Short #001 | Fire & Flow Gospel',
+        "description": (
+            "HLANGANA (H-La-Nga-Na) — a Zulu word meaning \"Gather Together\"\n\n"
+            "Hebrews 10:25 — \"not giving up meeting together, as some are in the habit of\n"
+            "doing, but encouraging one another—and all the more as you see the Day\n"
+            "approaching.\"\n\n"
+            "From the album Becoming Vol. 1 — out now on all platforms.\n\n"
+            "🎵 Stream Becoming Vol. 1: [STREAMING LINK]\n"
+            "📖 Free 7-Day Devotional Guide: [DEVOTIONAL LINK]\n\n"
+            "This is Kingdom Words — a series teaching words from African and global\n"
+            "languages that unlock scripture. Follow for Episode 2."
+        ),
+        "hashtags": [
+            "#HLANGANA", "#KingdomWords", "#Shorts", "#GospelMusic", "#Hebrews1025",
+            "#AfroGospel", "#BecomingVol1", "#FireAndFlowGospel", "#BibleVerse",
+            "#ChristianShorts", "#AfricanWorship", "#GospelArtist",
+            "#NewGospelMusic", "#GospelRelease2026", "#WordOfGod",
+        ],
+        "posting_time_recommendation": "2026-07-03 8:30 AM EST",
+        "posting_time_rationale": "Same as Instagram — simultaneous launch maximises initial momentum",
+    },
+    "facebook": {
+        "caption": (
+            "This is a word the Church needs right now.\n\n"
+            "HLANGANA — pronounced H-La-Nga-Na — is a Zulu word from Southern Africa.\n"
+            "It means: Gather Together.\n\n"
+            "And it's not just a beautiful word from a beautiful culture. It's at the\n"
+            "heart of one of the most practical commands in the New Testament:\n\n"
+            "\"not giving up meeting together, as some are in the habit of doing, but\n"
+            "encouraging one another — and all the more as you see the Day approaching.\"\n"
+            "— Hebrews 10:25\n\n"
+            "We are living in a time when it is increasingly easy to \"do church\" alone.\n"
+            "A podcast here. A livestream there. HLANGANA is a gentle, firm reminder that\n"
+            "gathering in person — with your people, your community, your church family —\n"
+            "is not a tradition. It is a discipline.\n\n"
+            "This is the first song on Becoming Vol. 1, the debut album from Fire & Flow\n"
+            "Gospel. And it's the first episode of Kingdom Words — a series teaching\n"
+            "words from African, Caribbean, and global languages that illuminate scripture\n"
+            "in ways the English translation sometimes can't.\n\n"
+            "🎵 Stream HLANGANA and the full album: [STREAMING LINK]\n"
+            "📖 Download the free 7-day devotional companion guide: [DEVOTIONAL LINK]\n\n"
+            "Share this with your church family — someone needs to hear HLANGANA today."
+        ),
+        "hashtags": [
+            "#HLANGANA", "#KingdomWords", "#GatherTogether",
+            "#Hebrews1025", "#FireAndFlowGospel", "#AfroGospel",
+        ],
+        "posting_time_recommendation": "2026-07-03 10:00 AM EST",
+        "posting_time_rationale": "Facebook church demographic peaks mid-morning; staggered from other platforms",
+    },
+}
+
+
+# ── Blog & Press Agent ─────────────────────────────────────────────────────────
+
+BLOG_PRESS_OUTPUT = {
+    "blog_post": {
+        "title": "What Does HLANGANA Mean — And Why This Zulu Word Is in Your Bible",
+        "meta_description": (
+            "HLANGANA is a Zulu word meaning \"Gather Together\" — and it captures something "
+            "Hebrews 10:25 says better than English can. Here's why it matters."
+        ),
+        "primary_keyword": "HLANGANA",
+        "content": """\
+There is a word from Southern Africa that has been sitting in your Bible for 2,000 years.
+
+You just didn't know what it was called.
+
+**HLANGANA** (pronounced H-La-Nga-Na) is a Zulu word. It means: *gather together*. And the moment you read Hebrews 10:25 with this word in mind, the verse opens up in a way the English translation only partially captures.
+
+*"not giving up meeting together, as some are in the habit of doing, but encouraging one another — and all the more as you see the Day approaching."*
+— Hebrews 10:25
+
+---
+
+## The Word Behind the Word
+
+In Zulu, HLANGANA is not a passive word. It is active. It is a summons. When you HLANGANA, you are not merely occupying the same space as other people. You are arriving with intention. You are choosing to gather — with all that the gathering requires: presence, vulnerability, commitment.
+
+The writer of Hebrews understood this. The instruction is not "try to attend church when you can." It is a direct counter to a specific habit — the habit of withdrawal. Of staying home. Of doing faith alone.
+
+HLANGANA is the answer to that habit.
+
+---
+
+## Why an African Word?
+
+Fire & Flow Gospel is the sound of the African and Caribbean diaspora encountering the living God. The languages of the continent — Zulu, Yoruba, Twi, Amharic, Igbo — carry spiritual weight that predates colonialism, and much of that weight is held in single words with no English equivalent.
+
+HLANGANA is one of those words.
+
+The Kingdom Words series exists to recover these words and return them to the Church. Not as cultural curiosity. As living theology.
+
+---
+
+## The Song
+
+HLANGANA, the track, opens *Becoming Vol. 1* — the debut album from Fire & Flow Gospel. It sets the album's tone: you are not on this journey alone. You were made to become who you are *with* the people God placed around you.
+
+The song is set to an Afro-Gospel/Amapiano soundscape — warm, rhythmic, communal. It sounds like gathering. That's the point.
+
+*🎵 Stream HLANGANA on all platforms — [STREAMING LINK]*
+
+---
+
+## The Invitation
+
+Hebrews 10:25 is not primarily about attendance. It is about encouragement. When you HLANGANA — when you genuinely gather — you strengthen the people around you. And they strengthen you.
+
+In a season when many believers have quietly disconnected from their church communities, this word is a gentle, firm call back.
+
+HLANGANA. Gather together.
+
+*📖 Download the free 7-day devotional guide for HLANGANA — [DEVOTIONAL LINK]*
+*Follow the Kingdom Words series for more words that unlock Scripture.*""",
+        "word_count": 320,
+        "cta_streaming": "🎵 Stream HLANGANA on all platforms — [STREAMING LINK]",
+        "cta_devotional": "📖 Download the free 7-day devotional guide — [DEVOTIONAL LINK]",
+    },
+    "press_release": {
+        "headline": (
+            "FIRE & FLOW GOSPEL LAUNCHES DEBUT ALBUM AND FIRST EPISODE OF "
+            '"KINGDOM WORDS" VIDEO SERIES ON JULY 3, 2026'
+        ),
+        "dateline": "[CITY, STATE] — July 3, 2026",
+        "body": (
+            "Fire & Flow Gospel, the gospel music project developed in partnership with "
+            "MindSpark MusicWorks™, released its debut album Becoming Vol. 1 on July 3, 2026, "
+            "alongside the first episode of its Kingdom Words short-form video series.\n\n"
+            "Kingdom Words is a content series that teaches words from African, Caribbean, "
+            "and global languages that illuminate biblical concepts — starting with HLANGANA, "
+            "a Zulu word meaning \"Gather Together,\" drawn from Hebrews 10:25. The first "
+            "episode was released simultaneously across Instagram Reels, YouTube Shorts, "
+            "TikTok, and Facebook on launch day.\n\n"
+            "Becoming Vol. 1 explores the spiritual and personal journey of becoming who "
+            "God made you to be — in community, through struggle, and in surrender. The "
+            "album blends Afro-Gospel and Amapiano elements with scripture-anchored lyrics, "
+            "reflecting the sound of the African and Caribbean diaspora.\n\n"
+            "A free 7-day devotional companion guide based on the album's themes is "
+            "available at [WEBSITE LINK].\n\n"
+            "Becoming Vol. 1 is available on Spotify, Apple Music, YouTube Music, and all "
+            "major streaming platforms."
+        ),
+        "founder_quote_draft": (
+            "There is so much theological wealth sitting in the languages of the African "
+            "diaspora that the Church has not fully unlocked. HLANGANA is one word that "
+            "has been sitting in Hebrews 10:25 for 2,000 years. We wanted to find it, "
+            "name it, and give it back to the people it belongs to."
+        ),
+        "quote_requires_founder_rewrite": True,
+        "boilerplate_fire_and_flow": (
+            "Fire & Flow Gospel is an independent Afro-Gospel / Amapiano Gospel artist "
+            "representing the African and Caribbean diaspora. Debut album: Becoming Vol. 1 (2026)."
+        ),
+        "boilerplate_musicworks": (
+            "MindSpark MusicWorks™ is an AI-assisted gospel music operating system built "
+            "to help independent gospel artists take their music from concept to campaign "
+            "with integrity and excellence."
+        ),
+        "contact_placeholder": "[NAME] | [EMAIL] | [PHONE]",
+    },
+    "church_blurb": {
+        "content": (
+            "Dear Pastor,\n\n"
+            "I wanted to share a new resource that may serve your congregation. Fire & "
+            "Flow Gospel has released a free 7-day devotional guide based on the scripture "
+            "Hebrews 10:25 — centered on the Zulu word HLANGANA, meaning \"Gather Together.\" "
+            "It's designed to help believers reconnect with the value of gathering in "
+            "community, making it suitable for small groups, mid-week study, or personal "
+            "devotion. The guide is available for free download at [LINK]. We'd love for "
+            "your church family to use it."
+        )
+    },
+}
+
+
+# ── Video Production Agent ─────────────────────────────────────────────────────
+
+VIDEO_PRODUCTION_OUTPUT = {
+    "concept_statement": (
+        "A 45-second short-form word lesson: the word HLANGANA appears on screen in gold "
+        "on indigo, is pronounced aloud, its meaning revealed, then connected to Hebrews "
+        "10:25 through song and imagery of people gathering."
+    ),
+    "storyboard": [
+        {
+            "timecode": "0:00–0:03",
+            "label": "THE WORD",
+            "visual": "Deep indigo background. 'HLANGANA' appears letter-by-letter in bold gold Montserrat font — center screen, large. Slight shimmer animation on the letters.",
+            "audio": "Silence. At 0:02, a clear voice pronounces: 'H-La-Nga-Na.'",
+            "on_screen_text": "HLANGANA (large, centered, gold #D4A853)",
+            "notes": "First frame must be visually striking — this is the hook and the thumbnail.",
+        },
+        {
+            "timecode": "0:03–0:08",
+            "label": "THE MEANING",
+            "visual": "Below the word, smaller text fades in: 'ZULU • GATHER TOGETHER'. Subtle sunrise gradient begins to warm the indigo from the bottom.",
+            "audio": "Single note piano tone — warm, resonant.",
+            "on_screen_text": "ZULU • GATHER TOGETHER (smaller, centered, warm white)",
+            "notes": "Ensure text is readable on muted view — TikTok audience often watches without sound.",
+        },
+        {
+            "timecode": "0:08–0:15",
+            "label": "THE SCRIPTURE",
+            "visual": "Background softens. Subtle B-roll begins — hands reaching, a door being opened, warm light. (Veo Clip 1)",
+            "audio": "The song HLANGANA begins — opening bars, low in the mix.",
+            "on_screen_text": "'not giving up meeting together...' (Hebrews 10:25, top third of frame)",
+            "notes": "Scripture must appear on screen before second 15 — hard rule.",
+        },
+        {
+            "timecode": "0:15–0:35",
+            "label": "THE MUSIC",
+            "visual": "Album artwork animation — gentle zoom. Brief imagery sequence: congregation entering, people embracing, sunrise over community. (Veo Clip 2)",
+            "audio": "Song excerpt at full energy — the hook or most recognizable lyrical moment.",
+            "on_screen_text": "Lower third: 'HLANGANA — Fire & Flow Gospel'. Subtle Kente-pattern border animation.",
+            "notes": "Most emotionally engaging section — pacing should feel communal, not rushed.",
+        },
+        {
+            "timecode": "0:35–0:42",
+            "label": "THE IDENTITY",
+            "visual": "Returns to indigo background. Artist name appears.",
+            "audio": "Music fades slightly — present but lower.",
+            "on_screen_text": "'Fire & Flow Gospel' (mid-size, centered) + 'Becoming Vol. 1 — Out Now' (smaller, below)",
+            "notes": "",
+        },
+        {
+            "timecode": "0:42–0:47",
+            "label": "THE CTA",
+            "visual": "Series badge appears — 'Kingdom Words' in upper corner. Hold 2 seconds on final frame.",
+            "audio": "Music fades out gently.",
+            "on_screen_text": "'Follow for more Kingdom Words' (bold, white, centered)",
+            "notes": "CTA must appear in final 8 seconds — hard rule. Hold final frame 2 seconds.",
+        },
+    ],
+    "veo_job_plan": [
+        {
+            "clip_number": 1,
+            "label": "Gathering imagery — scripture moment",
+            "timecode_in_video": "0:08–0:15",
+            "duration_seconds": 7,
+            "veo_prompt": (
+                "Cinematic footage of diverse people entering a sunlit church or community space — "
+                "warm golden morning light streaming through open doors, people greeting each other "
+                "warmly, hands reaching out in welcome, no identifiable faces in close-up, "
+                "photorealistic, gospel music atmosphere, deep indigo and warm gold color grade, "
+                "9:16 vertical aspect ratio, no text, no logos, no watermarks"
+            ),
+            "negative_prompt": "text, logos, watermarks, identifiable faces in close-up, violent content, sexual content, generic stock photo look",
+            "aspect_ratio": "9:16",
+            "style_notes": "Match brand palette: deep indigo (#2D1B69) + warm gold (#D4A853). Morning light. Cinematic, not amateur.",
+        },
+        {
+            "clip_number": 2,
+            "label": "Community gathering — music section",
+            "timecode_in_video": "0:15–0:35",
+            "duration_seconds": 20,
+            "veo_prompt": (
+                "Aerial view of people in a circle, hands joined, in a sunlit outdoor gathering "
+                "space — warm gold morning light, Southern African architectural elements visible "
+                "in background, community feeling, no identifiable faces, warm gold and indigo "
+                "color grade, 9:16 vertical crop, photorealistic, no text, no logos"
+            ),
+            "negative_prompt": "text, logos, watermarks, identifiable faces in close-up, violent content, sexual content, cold lighting, generic Western church imagery",
+            "aspect_ratio": "9:16",
+            "style_notes": "Cultural specificity: Southern African setting. Warm, communal, celebratory. Not somber.",
+        },
+    ],
+    "production_notes_human": (
+        "1. Produce in Canva Video, CapCut, or DaVinci Resolve.\n"
+        "2. Foundation: deep indigo background (#2D1B69).\n"
+        "3. 'HLANGANA' in Montserrat ExtraBold, gold (#D4A853) — animate letter-by-letter with Canva 'appear' animation.\n"
+        "4. Record or source a clean pronunciation of 'H-La-Nga-Na' — confirm with native Zulu speaker.\n"
+        "5. Audio: trim the master WAV to the strongest 25-second moment (the hook). Do not use AI-generated audio.\n"
+        "6. Veo clips: paste each Veo prompt above into veo.google.com, download results, import to editor.\n"
+        "7. Stock footage fallback (if Veo unavailable): Pexels search — 'congregation morning light', 'community gathering sunrise'.\n"
+        "8. Burn pronunciation subtitle at 0:02 for muted viewers.\n"
+        "9. Export: 1080x1920px MP4, H.264, no letter/pillarboxing."
+    ),
+    "estimated_production_time": "3–4 hours first time; 1–2 hours with template",
+}
+
+
+# ── Thumbnail & Art Agent ──────────────────────────────────────────────────────
+
+THUMBNAIL_OUTPUT = {
+    "concept_a": {
+        "label": "Text-Only (Recommended)",
+        "description": (
+            "Deep indigo full bleed with warm gold sunrise gradient rising from the bottom third. "
+            "'HLANGANA' in large gold Montserrat ExtraBold dominates the upper frame. "
+            "Thin gold horizontal rule. 'GATHER TOGETHER' in white below. "
+            "Hebrews 10:25 reference bottom left. Series badge top left. Artist name bottom right."
+        ),
+        "background": "#2D1B69 full bleed with warm gold (#D4A853) gradient bleeding up from bottom 40%",
+        "headline_text": "HLANGANA",
+        "headline_color": "#D4A853",
+        "headline_font": "Montserrat ExtraBold",
+        "subtext": "GATHER TOGETHER",
+        "subtext_color": "#FFFFFF",
+        "scripture_reference": "Hebrews 10:25",
+        "artist_name_placement": "Lower right, small — 'Fire & Flow Gospel', gold #D4A853",
+        "series_badge": "'Kingdom Words #001' — upper left corner, white text on dark #1A0F42 badge shape",
+        "canva_instructions": (
+            "1. Open Canva → Create a design → Custom size → 1080 x 1920 px\n"
+            "2. Background: Click background → solid color → #2D1B69\n"
+            "3. Add gradient: Elements → Gradients → choose 'Bottom fade' → set color to #D4A853, opacity 60%, cover bottom 40% of frame\n"
+            "4. Add text: 'HLANGANA' → Font: Montserrat → Style: ExtraBold → Size: 120 → Color: #D4A853 → Position: horizontal center, vertical 25–45%\n"
+            "5. Add thin line: Elements → Lines → horizontal rule → color #D4A853 → width: 60% of frame → position below 'HLANGANA'\n"
+            "6. Add text: 'GATHER TOGETHER' → Font: Montserrat → Style: Regular → Size: 55 → Color: #FFFFFF → Position: horizontal center, just below the line\n"
+            "7. Add text: 'Hebrews 10:25' → Font: Montserrat → Style: Light Italic → Size: 28 → Color: rgba(255,255,255,0.7) → Position: lower left, 8% from left edge, 10% from bottom\n"
+            "8. Add badge shape: Elements → Shapes → Rectangle with rounded corners → color #1A0F42 → Position: upper left, 4% from left and top\n"
+            "9. Add text over badge: 'Kingdom Words #001' → Size: 22 → Color: #FFFFFF → Center on badge\n"
+            "10. Add text: 'Fire & Flow Gospel' → Size: 26 → Color: #D4A853 → Position: lower right, 8% from right, 6% from bottom\n"
+            "11. Download as PNG → Resolution: 2x (2160 x 3840) → Resize down to 1080 x 1920 for posting\n"
+            "Estimated time: 30–45 minutes first design; 15 minutes with template saved."
+        ),
+    },
+    "concept_b": {
+        "label": "Photography-Based",
+        "description": (
+            "Warm-toned photography of people gathering — hands, a door, or a congregation entering. "
+            "40% dark indigo gradient from top. 'HLANGANA' in gold upper half. "
+            "'Fire & Flow Gospel' in white lower third."
+        ),
+        "stock_photo_search_terms": [
+            "congregation morning light",
+            "community gathering sunrise",
+            "church doors opening warm light",
+            "people greeting hands reaching",
+            "gospel worship hands raised",
+        ],
+        "stock_photo_site": "Pexels (free) — pexels.com/search/congregation",
+        "text_overlay_spec": (
+            "Dark indigo gradient (#2D1B69, 70% opacity) from top, fading to transparent at mid-frame. "
+            "'HLANGANA' in Montserrat ExtraBold gold (#D4A853), upper 40% of frame. "
+            "'Fire & Flow Gospel' in white, lower third."
+        ),
+        "canva_instructions": (
+            "1. Open Canva → Create a design → Custom size → 1080 x 1920 px\n"
+            "2. Upload your chosen stock photo as background — resize to fill frame\n"
+            "3. Add gradient overlay: Elements → Gradients → Top fade → #2D1B69 at 70% opacity\n"
+            "4. Add text: 'HLANGANA' → Montserrat ExtraBold → Size: 100 → Color: #D4A853 → Upper 40%, centered\n"
+            "5. Add text: 'GATHER TOGETHER' → Montserrat Regular → Size: 45 → Color: #FFFFFF → Below headline\n"
+            "6. Add text: 'Fire & Flow Gospel' → Montserrat Regular → Size: 30 → Color: #FFFFFF → Lower third, centered\n"
+            "7. Add series badge (same as Option A): 'Kingdom Words #001' → upper left\n"
+            "8. Download as PNG → 1080 x 1920 px"
+        ),
+    },
+    "ai_image_prompt_for_concept_b": (
+        "Photorealistic wide shot of a diverse group of people gathering at sunrise outside a "
+        "Southern African community building — warm golden morning light, people greeting each "
+        "other warmly, no identifiable faces in close-up, Afro-Gospel atmosphere, deep indigo "
+        "and warm gold color grade, 9:16 vertical composition, no text, no watermarks, "
+        "no logos, cinematic quality — do NOT include any text in the image"
+    ),
+    "platform_crop_notes": (
+        "Instagram Reels/YouTube Shorts/TikTok/Facebook Reels cover: 1080x1920 — use as-is (native 9:16). "
+        "Blog header (16:9, 1200x628): crop to center on 'HLANGANA' — series badge may be cut, reposition to top center. "
+        "Instagram Grid (1:1, 1080x1080): square crop centered on word — Hebrews reference and badge may be cut."
+    ),
+    "estimated_canva_time": "30–45 minutes",
+}

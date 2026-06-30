@@ -1,0 +1,258 @@
+{
+  "artist_id": "fire_and_flow_gospel",
+  "artist_name": "Fire & Flow Gospel",
+  "display_name": "Fire & Flow Gospel",
+  "tagline": "The sound of the African and Caribbean diaspora encountering the living God.",
+  "mission": "To create gospel music that bridges African and Caribbean cultural languages with scripture — giving the diaspora community music that sounds like them, speaks their heritage, and points to Christ. Every release is a theological act, not a commercial one.",
+
+  "bio_short": "Fire & Flow Gospel is an independent Afro-Gospel / Amapiano Gospel artist representing the African and Caribbean diaspora. Rooted in Trinidad and Africa, the project produces music that sounds like gathering — warm, rhythmic, communal, and Christ-centered. Debut album: Becoming Vol. 1 (July 2026).",
+
+  "bio_long": "Fire & Flow Gospel was born at the intersection of two worlds: the Caribbean fire of Trinidad and the deep cultural roots of the African continent. The project exists because the African and Caribbean Church needed music that sounded like itself — not an imitation of American gospel, but something rooted in its own languages, its own rhythms, and its own theological story.\n\nThe name carries a dual identity. Fire represents the passionate, festival-oriented, movement-driven side of worship — the Sgija energy, the Amapiano pulse, the crowd that lifts hands and moves without embarrassment. Flow represents the meditative, devotional interior — the stillness after worship, the personal encounter, the intimacy of prayer. Both are required. Neither cancels the other.\n\nThe debut album Becoming Vol. 1 is about the journey of becoming who God made you to be — in community, through struggle, and in surrender. The Kingdom Words series runs alongside it, teaching words from African and global languages that unlock scripture in ways English translation cannot fully capture.",
+
+  "genre": ["Afro-Gospel", "Amapiano Gospel", "Sgija Gospel", "Afrobeats Gospel"],
+  "heritage": ["Trinidadian", "African Diaspora", "Southern African", "Caribbean"],
+
+  "team_members": [
+    {
+      "name": "Fire",
+      "role": "Artist persona — performance and festival expression",
+      "personality": "Passionate, energetic, movement-driven, communal. Lights up a room. The persona that leads worship in a festival setting — arms open, voice full, crowd connected. Represents the Amapiano-driven, Sgija-influenced side of the sound.",
+      "visual_notes": "Warm light, expansive environments, crowd energy, movement. Does not pose — moves."
+    },
+    {
+      "name": "Flow",
+      "role": "Artist persona — devotional and intimate expression",
+      "personality": "Meditative, contemplative, intimate. The persona that leads a room into stillness. Represents the devotional interior — the private prayer, the scripture encounter, the quiet revelation.",
+      "visual_notes": "Close framing, soft golden light, eyes closed or looking upward, still environments with depth."
+    }
+  ],
+
+  "creative_dna": {
+    "lighting": [
+      "Warm golden tones — sunrise and early morning preferred",
+      "Backlit with lens flare for divine atmosphere",
+      "Natural light only — no harsh studio lighting",
+      "Bonfire light for intimate night scenes",
+      "God rays through windows or trees"
+    ],
+    "color_palette": {
+      "primary": "#2D1B69 (deep indigo)",
+      "secondary": "#D4A853 (warm gold)",
+      "accent": "Sunrise amber gradient — warm amber fading to pale gold",
+      "background_warm": "#1A0F42 (darker indigo for overlays)",
+      "text_light": "#FFFFFF",
+      "text_gold": "#D4A853",
+      "avoid": "Cold blues, grey tones, neon, clinical white"
+    },
+    "architecture": [
+      "Authentic Southern African courtyard — brick, warm stone, clay",
+      "Open-air community spaces with natural shade",
+      "Church interiors with natural light — no fluorescent",
+      "Outdoor gathering spaces with trees and warm sky",
+      "Trinidad-style painted wood buildings (secondary)"
+    ],
+    "environment": [
+      "Outdoor African courtyard — primary environment",
+      "Sunrise or golden hour outdoors",
+      "Community gathering spaces — people present or implied",
+      "Church interiors with pew light and stained glass warmth",
+      "Bonfire settings for intimate night scenes"
+    ],
+    "lens_style": "Cinematic. Wide establishing shots with warm depth of field. Close-ups that feel intimate, not invasive. Shallow focus during devotional moments. Wide angles during festival moments.",
+    "camera_movement": "Slow reveals. Gentle push-ins. Ground-level to sky transitions for worship moments. Steady — no shaky cam. Drone for establishing outdoor/festival shots.",
+    "composition": "Centered subjects for direct-address moments. Rule of thirds for narrative shots. People in the foreground with environment behind. Negative space used intentionally — God is in the space.",
+    "typography": {
+      "headline_font": "Montserrat ExtraBold",
+      "body_font": "Montserrat Regular",
+      "accent_font": "Montserrat Light Italic",
+      "style_notes": "Large, bold, high contrast. Gold on indigo is the primary pairing. White on indigo secondary. Never small — legibility is non-negotiable even at thumbnail size."
+    },
+    "visual_keywords": [
+      "gathering", "warmth", "movement", "joy", "community", "authentic",
+      "African courtyard", "sunrise", "hands raised", "people together",
+      "golden light", "heritage", "faith", "belonging", "home"
+    ],
+    "rendering_keywords": [
+      "cinematic", "photorealistic", "warm color grade", "Southern African setting",
+      "Amapiano energy", "gospel atmosphere", "natural light", "golden hour",
+      "community gathering", "authentic African architecture"
+    ],
+    "emotion": ["joy", "belonging", "reverence", "hope", "movement", "peace", "home"],
+    "energy": ["communal warmth", "festival joy", "devotional stillness", "forward momentum"],
+    "movement": [
+      "Sgija-style dance energy in festival contexts",
+      "Slow swaying in devotional contexts",
+      "Crowd movement — hands raised, bodies moving together",
+      "Never choreographed — always organic and authentic"
+    ],
+    "festival_style": "Open-air gospel festival. Large crowd, warm golden lighting, stage with natural backdrop (trees, sky, courtyard wall). Amapiano rhythm visible in how people move. Energy is communal, not performance-centered.",
+    "church_style": "Authentic African church interior or courtyard worship. Intimate congregation, natural light, no stage production equipment visible. Worship leader and congregation at the same level.",
+    "performance_style": "No performative poses. Artist leads — does not entertain. The congregation or community is always present or implied, never absent. Music is for gathering, not spectacle.",
+    "what_to_avoid": [
+      "Generic Western church imagery (white suburban megachurch aesthetic)",
+      "American gospel performance style (solo spotlight, theatrical staging)",
+      "Cold or blue-toned lighting",
+      "Tokenistic or decorative African imagery (patterns used as costume, not meaning)",
+      "Stock photo church imagery",
+      "Neon or club lighting",
+      "Ostentatious wealth imagery",
+      "Photoshopped or heavily filtered faces",
+      "Identifiable faces in close-up in Veo/AI-generated clips"
+    ]
+  },
+
+  "brand_voice": {
+    "tone": [
+      "Devotional — speaks to the heart, not the crowd",
+      "Educational — explains cultural and theological context",
+      "Community-focused — always invites, never excludes",
+      "Scripture-anchored — every major claim connects to a verse",
+      "Pastoral — speaks like a shepherd, not a marketer"
+    ],
+    "style": [
+      "Short sentences. Breathing room between ideas.",
+      "Uses African and Caribbean cultural reference with full explanation",
+      "Does not assume the reader knows the heritage — explains warmly",
+      "Invites without pressure",
+      "Uses 'we' and 'our' — community language, not solo voice"
+    ],
+    "vocabulary": [
+      "Kingdom", "Gather", "Community", "Heritage", "Diaspora",
+      "Scripture", "Journey", "Becoming", "Together", "People",
+      "Church family", "The Day approaching", "Living theology",
+      "Cultural bridge", "Unlock scripture"
+    ],
+    "avoid": [
+      "Hype language ('This is FIRE!!', 'You don't want to miss this')",
+      "Pressure tactics ('Buy now', 'Limited time')",
+      "Generic Christian cliches ('God is good all the time', standalone)",
+      "American megachurch marketing language",
+      "Vague spirituality ('vibes', 'energy', 'manifest')",
+      "Anything that centers the artist over the message"
+    ],
+    "scripture_style": "Always quote accurately from a named translation (NIV preferred). Quote the full relevant portion — do not truncate to remove theological weight. Reference book, chapter, and verse. When using African language words, always provide pronunciation and translation.",
+    "cta_style": "Invitation-based, never pressure-based. 'Stream' not 'Buy'. 'Download the free guide' not 'Get it now'. 'Follow for more Kingdom Words' not 'Hit that subscribe button'. Always offer the devotional guide as the deeper invitation beyond the song.",
+    "platform_voice": {
+      "instagram": "Educational hook + personal devotional depth. The caption teaches something. Community question in pinned comment.",
+      "tiktok": "Sharp hook in first 3 words. Short. Punchy. Creates curiosity. 'This Zulu word is in your Bible' style.",
+      "youtube": "Full educational description. Includes scripture. Invites to full album and devotional guide.",
+      "facebook": "Longer-form pastoral reflection. Church community language. Share request — 'someone needs to hear this today.'",
+      "email": "Personal tone. Devotional letter format. Signed from the artist. Includes scripture meditation."
+    }
+  },
+
+  "theological_guardrails": {
+    "theological_stance": "Evangelical Christian. Scripture is authoritative. Christ is central to every release. The African and Caribbean Church heritage is a theological gift, not a cultural accessory. Community is a biblical mandate, not a marketing strategy.",
+    "scripture_accuracy": "All scripture must be quoted from an established translation (NIV, ESV, NKJV). Never paraphrase scripture as if it is a direct quote. Never remove context that changes meaning. If a verse is complex, explain it — do not simplify to a slogan.",
+    "required": [
+      "Every release connects to at least one specific scripture",
+      "Christ must be explicitly named — not just 'God' in a generic sense",
+      "The Church (gathered community) is affirmed as central to faith",
+      "African and Caribbean cultural identity is presented as theologically rich, not as novelty",
+      "Every campaign offers a free devotional resource"
+    ],
+    "forbidden": [
+      "Health-and-wealth / prosperity gospel theology",
+      "Vague spirituality not grounded in scripture",
+      "Content that centers human achievement over God's grace",
+      "Cultural appropriation — using African imagery without meaning or permission",
+      "Anything that would embarrass a pastor reading the caption to their congregation"
+    ]
+  },
+
+  "discography": [
+    {
+      "album_id": "becoming-vol-1",
+      "title": "Becoming Vol. 1",
+      "release_date": "2026-07-03",
+      "tracks": ["HLANGANA"],
+      "status": "released",
+      "notes": "Debut album. Theme: becoming who God made you to be — in community, through struggle, in surrender."
+    }
+  ],
+
+  "series": [
+    {
+      "series_id": "kingdom-words",
+      "name": "Kingdom Words",
+      "description": "A short-form video series teaching words from African, Caribbean, and global languages that illuminate biblical concepts. Each episode: one word, one scripture, one song.",
+      "episode_count": 1,
+      "episodes": [
+        {
+          "episode": 1,
+          "word": "HLANGANA",
+          "language": "Zulu",
+          "meaning": "Gather Together",
+          "scripture": "Hebrews 10:25",
+          "song_id": "fire-flow-hlangana-001",
+          "status": "released"
+        }
+      ],
+      "visual_identity": "Deep indigo background, gold word reveal, series badge top-left, consistent typography across all episodes"
+    }
+  ],
+
+  "platform_handles": {
+    "instagram": "@fireandflowgospel",
+    "tiktok": "@fireandflowgospel",
+    "youtube": "Fire & Flow Gospel",
+    "facebook": "Fire & Flow Gospel",
+    "spotify": "Fire & Flow Gospel",
+    "apple_music": "Fire & Flow Gospel"
+  },
+
+  "audience": {
+    "primary": "African and Caribbean diaspora Christians aged 18-45 in UK, US, West Africa, and Caribbean",
+    "secondary": "Gospel music listeners open to Afro-Gospel and Amapiano Gospel sounds",
+    "tertiary": "Pastors and ministry leaders looking for devotional resources for their congregations",
+    "geography_priority": ["UK", "Nigeria", "Ghana", "South Africa", "US", "Trinidad", "Jamaica"],
+    "peak_engagement_times": {
+      "instagram": "8:30 AM EST Thursday (hits UK afternoon + West Africa afternoon)",
+      "tiktok": "9:00 AM EST Thursday",
+      "facebook": "10:00 AM EST Thursday (church demographic peaks mid-morning)",
+      "youtube": "8:30 AM EST Thursday",
+      "blog": "8:00 AM EST Saturday (devotional reading time)"
+    },
+    "notes": "July 3 US Independence Day eve has minimal impact — primary diaspora audience in UK and Africa is unaffected."
+  },
+
+  "brand_rules": [
+    "No AI-generated audio — ever. The master recording is always a real human performance.",
+    "No generated quotes attributed to the founder without their explicit word-for-word approval.",
+    "The devotional guide is always offered free — never paywalled.",
+    "Cultural words (Zulu, Yoruba, Twi, etc.) are always explained with pronunciation and meaning.",
+    "The Bonfire logo is the primary brand mark. Use consistently.",
+    "No explicit branding on some video content — the music speaks for itself.",
+    "Every press release quote must be written by the founder in their own words.",
+    "Album cover must be present before any campaign launches.",
+    "Streaming link must be live before social captions are published.",
+    "Church outreach blurb is always resource-first — offer the devotional guide before asking for anything."
+  ],
+
+  "founder_preferences": [
+    "Campaign mode defaults to Blitz for new series launches, Standard for subsequent episodes.",
+    "Instagram and YouTube always launch simultaneously. TikTok 30 minutes later.",
+    "Blog posts publish Saturday morning — devotional reading time.",
+    "Press releases distribute Monday morning — gospel media news cycle.",
+    "Risk log must include pronunciation risk for all non-English titles.",
+    "Thumbnail Option A (text-only, word + meaning) is the default recommendation for Kingdom Words series — it scales across episodes.",
+    "The approval queue must present the press release with APPROVE disabled until the founder rewrites the quote.",
+    "Video production notes should always specify CapCut or Canva Video for manual assembly.",
+    "Veo prompts must never request identifiable faces in close-up.",
+    "Behind-the-song content publishes 1 week post-launch — not on launch day."
+  ],
+
+  "future_notes": [
+    "Kingdom Words Episode 2: next African language word TBD — suggest Yoruba, Twi, or Amharic.",
+    "Becoming Vol. 1 full album rollout: future singles to be identified.",
+    "Ministry partnership track: identify 5 diaspora pastors in UK and US for church outreach distribution.",
+    "Veo integration (V3): once available, automate gathering imagery clips for Kingdom Words series.",
+    "Hedra integration (V3): AI avatar for devotional content that does not require full video production.",
+    "Future artists in the MusicWorks system: Fire, Flow, Noel & The Gang, Hart Choir, Anton Valerian Schreier."
+  ],
+
+  "campaign_history": [],
+
+  "created_at": "2026-06-29T00:00:00+00:00",
+  "updated_at": "2026-06-29T00:00:00+00:00"
+}
