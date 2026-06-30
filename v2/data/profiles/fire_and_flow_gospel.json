@@ -1,19 +1,24 @@
 {
   "cultural_pillars": [
+    "African spiritual heritage — the deep roots of African faith, community, and identity",
+    "Trinidadian rhythm, warmth, joy, and community — the Caribbean heartbeat in every song",
+    "New York confidence, rap skill, lyrical sharpness, swagger, and urban excellence",
     "Gospel mission — every lyric points to Christ",
-    "Urban confidence — rap skill and lyrical depth as prophetic proclamation",
-    "Youth movement — next generation of African and Caribbean believers",
     "Afro-Caribbean-American identity — the lens for all creative decisions",
     "Kingdom Words — recovering African and global language theology",
-    "Diaspora bridge — music for those living between cultures"
+    "Diaspora bridge — music for those living between cultures and continents",
+    "Youth movement — next generation of African and Caribbean believers"
   ],
+  "brand_statement": "Fire & Flow Gospel is an Afro-Caribbean-American gospel movement that unites African spiritual heritage, Trinidadian joy and rhythm, and New York confidence into Christ-centered music for a global generation.",
   "cities_of_influence": [
     "New York City",
     "London",
     "Lagos",
     "Port of Spain",
     "Johannesburg",
-    "Accra"
+    "Accra",
+    "Kingston",
+    "Bridgetown"
   ],
   "countries_of_influence": [
     "USA",
@@ -27,7 +32,7 @@
   ],
   "target_audience": "Christian youth and young adults in the African and Caribbean diaspora, ages 18-35. Culturally bilingual — fluent in their heritage and in their adopted country. Faithful but not religious. Gospel-hungry but genre-curious. Looking for music that sounds like them AND sounds like God.",
   "ministry_focus": "Discipleship through music. Kingdom Words teaching series — recovering African and global language theology for the Church. Church community building through gathering-centered songs. Pastoral partnerships for devotional guide distribution.",
-  "visual_style_notes": "Deep indigo and warm gold. Authentic African and Caribbean settings — never generic stock. Warm, communal, rooted in place. Festival energy (Fire persona) and intimate devotional (Flow persona). Urban confidence meets gospel mission. Both aesthetics live in the same brand.",
-  "notes": "Rap skill and lyrical depth are central — not just worship melody but prophetic proclamation. The Afro-Caribbean-American identity is the lens through which all creative decisions flow. Africa, Trinidad & Tobago, and New York City are all present in the sound and the visual world. Never sanitize the culture for a mainstream Christian market.",
-  "updated_at": "2026-06-30T12:58:17.396656+00:00"
+  "visual_style_notes": "Deep indigo and warm gold. Africa, Trinidad & Tobago, and New York City are all present in the visual world. Authentic settings — African courtyards, Caribbean warmth, urban confidence. Never generic stock. Festival energy (Fire persona) and intimate devotional (Flow persona). Urban excellence meets gospel mission. Both aesthetics live in the same brand.",
+  "notes": "Fire persona brings New York rap skill, lyrical depth, and urban confidence — not just worship melody but prophetic proclamation. Flow persona brings Caribbean warmth, worship command, and devotional intimacy. The Afro-Caribbean-American identity — rooted in Africa, Trinidad & Tobago, and New York City — is the lens through which all creative decisions flow. Never sanitize the culture for a mainstream Christian market.",
+  "updated_at": "2026-06-30T00:00:00+00:00"
 }

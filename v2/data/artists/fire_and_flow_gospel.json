@@ -10,20 +10,22 @@
   "bio_long": "Fire & Flow Gospel was born at the intersection of two worlds: the Caribbean fire of Trinidad and the deep cultural roots of the African continent. The project exists because the African and Caribbean Church needed music that sounded like itself — not an imitation of American gospel, but something rooted in its own languages, its own rhythms, and its own theological story.\n\nThe name carries a dual identity. Fire represents the passionate, festival-oriented, movement-driven side of worship — the Sgija energy, the Amapiano pulse, the crowd that lifts hands and moves without embarrassment. Flow represents the meditative, devotional interior — the stillness after worship, the personal encounter, the intimacy of prayer. Both are required. Neither cancels the other.\n\nThe debut album Becoming Vol. 1 is about the journey of becoming who God made you to be — in community, through struggle, and in surrender. The Kingdom Words series runs alongside it, teaching words from African and global languages that unlock scripture in ways English translation cannot fully capture.",
 
   "genre": ["Afro-Gospel", "Amapiano Gospel", "Sgija Gospel", "Afrobeats Gospel"],
-  "heritage": ["Trinidadian", "African Diaspora", "Southern African", "Caribbean"],
+  "heritage": ["African", "Trinidadian", "Caribbean", "Afro-Caribbean-American", "New York"],
 
   "team_members": [
     {
       "name": "Fire",
-      "role": "Artist persona — performance and festival expression",
-      "personality": "Passionate, energetic, movement-driven, communal. Lights up a room. The persona that leads worship in a festival setting — arms open, voice full, crowd connected. Represents the Amapiano-driven, Sgija-influenced side of the sound.",
-      "visual_notes": "Warm light, expansive environments, crowd energy, movement. Does not pose — moves."
+      "role": "Artist persona — performance, festival, and prophetic expression",
+      "personality": "Passionate, energetic, movement-driven, communal. New York confidence, rap skill, lyrical sharpness, swagger, and urban excellence. Lights up a room. The persona that leads worship in a festival setting — arms open, voice full, crowd connected. Represents the Amapiano-driven, Sgija-influenced, lyrically sharp side of the sound.",
+      "geography": "Africa · Trinidad & Tobago · New York City",
+      "visual_notes": "Warm light, expansive environments, crowd energy, movement. Urban confidence meets African spiritual depth. Does not pose — moves."
     },
     {
       "name": "Flow",
-      "role": "Artist persona — devotional and intimate expression",
-      "personality": "Meditative, contemplative, intimate. The persona that leads a room into stillness. Represents the devotional interior — the private prayer, the scripture encounter, the quiet revelation.",
-      "visual_notes": "Close framing, soft golden light, eyes closed or looking upward, still environments with depth."
+      "role": "Artist persona — devotional, pastoral, and intimate expression",
+      "personality": "Worship command, emotional warmth, Caribbean joy, and bold spiritual presence. Meditative, contemplative, intimate. The persona that leads a room into stillness and encounter. Represents the devotional interior — private prayer, scripture encounter, Caribbean warmth, and quiet revelation.",
+      "geography": "Africa · Trinidad & Tobago · New York City",
+      "visual_notes": "Close framing, soft golden light, Caribbean warmth, eyes closed or looking upward, still environments with depth."
     }
   ],
 
