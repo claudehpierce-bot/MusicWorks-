@@ -35,3 +35,7 @@ Thumbs.db
 
 # Logs
 *.log
+
+# Local dev artifacts
+screenshots/
+v2/assets_test_tmp/

@@ -15,6 +15,6 @@ DB_PATH = BASE_DIR / "musicworks.db"
 
 CLAUDE_MODEL = "claude-sonnet-4-6"
 
-MOCK_MODE = os.getenv("MOCK_MODE", "false").lower() == "true"
+MOCK_MODE = os.getenv("MOCK_MODE", "false").lower() == "true" or not ANTHROPIC_API_KEY
 
 ASSETS_DIR.mkdir(exist_ok=True)

@@ -13,6 +13,20 @@ st.set_page_config(
     layout="wide",
 )
 
+
+@st.cache_resource
+def _bootstrap_demo():
+    """Seed demo data once on cold start if database is empty. Runs once per server instance."""
+    try:
+        from scripts.seed_demo import seed_demo
+        seed_demo(silent=True)
+    except Exception:
+        pass
+    return True
+
+
+_bootstrap_demo()
+
 inject_styles()
 page = nav_sidebar()
 
