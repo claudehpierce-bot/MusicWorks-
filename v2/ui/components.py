@@ -38,16 +38,19 @@ def nav_sidebar() -> str:
         current = st.session_state.get("page", "home")
 
         NAV_ITEMS = [
-            ("🏠", "Home",           "home"),
-            ("👥", "Artists",        "artists"),
-            ("🎵", "Projects",       "projects"),
-            ("🎬", "Studio",         "studio"),
-            ("📦", "Campaigns",      "campaigns"),
-            ("✅", "Approval Queue", "approval"),
-            ("🚀", "Publishing",     "publishing"),
-            ("📊", "Analytics",      "analytics"),
-            ("🧠", "Brand Brain",    "brand_brain"),
-            ("⚙",  "Settings",       "settings"),
+            ("🏠", "Home",             "home"),
+            ("🎬", "Media Studio",     "media_studio"),
+            ("👥", "Artists",          "artists"),
+            ("📋", "Production",       "production"),
+            ("📅", "Calendar",         "calendar"),
+            ("🎵", "Projects",         "projects"),
+            ("🗄️", "Studio",           "studio"),
+            ("📦", "Campaigns",        "campaigns"),
+            ("✅", "Asset Review",     "approval"),
+            ("🚀", "Publishing",       "publishing"),
+            ("📊", "Analytics",        "analytics"),
+            ("🧠", "Brand Brain",      "brand_brain"),
+            ("⚙",  "Settings",         "settings"),
         ]
 
         for icon, label, page_id in NAV_ITEMS:

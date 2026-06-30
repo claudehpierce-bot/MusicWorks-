@@ -33,6 +33,15 @@ page = nav_sidebar()
 if page == "home":
     from ui.pages.home import render
     render()
+elif page == "media_studio":
+    from ui.pages.media_studio import render
+    render()
+elif page == "production":
+    from ui.pages.production import render
+    render()
+elif page == "calendar":
+    from ui.pages.calendar import render
+    render()
 elif page == "artists":
     from ui.pages.artists import render
     render()
