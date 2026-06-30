@@ -579,21 +579,43 @@ def _step_validate():
     st.caption(f"**{d.get('artist_name', '')}** · **{d.get('title', '')}** · {d.get('album_title', '')}")
 
     brand = load_artist(d.get("artist_id", ""))
+    artist_id = d.get("artist_id", "")
+
+    # Brand Vault + Distribution checks
+    try:
+        from execution.brand_vault import vault_has_visuals
+        from execution.distribution_store import load_distribution, dist_configured_count
+        _has_visuals  = vault_has_visuals(artist_id)
+        _dist         = load_distribution(artist_id)
+        _dist_ok      = dist_configured_count(_dist) > 0
+    except Exception:
+        _has_visuals = False
+        _dist_ok     = False
 
     checks = [
-        ("Song title",              bool(d.get("title")),                        True),
-        ("Album title",             bool(d.get("album_title")),                  True),
-        ("Artist selected",         bool(d.get("artist_id")),                    True),
-        ("Primary scripture",       bool(d.get("scripture_primary")),            True),
-        ("Themes",                  bool(d.get("themes")),                       True),
-        ("Brand Brain found",       brand is not None,                           False),
-        ("Audio file uploaded",     bool(d.get("audio_file_path")),             False),
-        ("Album cover uploaded",    bool(d.get("artwork_file_path")),            False),
-        ("Creative DNA references", bool(d.get("creative_dna_reference_paths")), False),
+        ("Song title",                  bool(d.get("title")),                         True),
+        ("Album title",                 bool(d.get("album_title")),                   True),
+        ("Artist selected",             bool(d.get("artist_id")),                     True),
+        ("Primary scripture",           bool(d.get("scripture_primary")),             True),
+        ("Themes",                      bool(d.get("themes")),                        True),
+        ("Brand Brain found",           brand is not None,                            False),
+        ("Audio file uploaded",         bool(d.get("audio_file_path")),              False),
+        ("Album cover uploaded",        bool(d.get("artwork_file_path")),             False),
+        ("Creative DNA references",     bool(d.get("creative_dna_reference_paths")),  False),
+        ("Brand Vault — visual assets", _has_visuals,                                 False),
+        ("Distribution configured",     _dist_ok,                                     False),
     ]
 
     errors = [(label, req) for label, ok, req in checks if not ok and req]
     warnings = [(label, req) for label, ok, req in checks if not ok and not req]
+
+    # Specific visual warning
+    if not _has_visuals:
+        st.info(
+            "MusicWorks can build this campaign, but **visual generation will be weaker** until "
+            "artist photos, logos, and Creative DNA references are uploaded in the Brand Vault. "
+            "Go to Artists → Brand Vault to add them."
+        )
 
     rows_html = ""
     for label, ok, required in checks:

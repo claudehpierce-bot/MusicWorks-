@@ -1,10 +1,16 @@
-# MusicWorks™ V3 — Streamlit Cloud Deployment Guide
+# MusicWorks™ V3.1 — Streamlit Cloud Deployment Guide
 
 ## What this deploys
 
-A live public demo of MusicWorks™ with a fully seeded Fire & Flow Gospel
-campaign (HLANGANA / Becoming Vol. 1). No API key required — the app runs in
-Mock Mode automatically and seeds its own demo data on first launch.
+MusicWorks™ V3.1 — a live public demo of an AI-assisted gospel music operating system with:
+- **Editable artist profiles** — view/edit mode with full identity fields
+- **Brand Vault** — upload and manage artist photos, logos, album covers, mood boards
+- **Distribution Setup** — configure social, streaming, and owned channel destinations
+- **Campaign Engine** — New Project Wizard → Asset Library → Approval Queue → Publishing
+- **Streamlit Cloud demo mode** — auto-seeds Fire & Flow Gospel data on cold start
+- **Founder-approved release workflow** — nothing publishes without approval
+
+No API key required. Runs in Mock Mode automatically.
 
 ---
 

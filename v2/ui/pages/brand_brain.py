@@ -150,6 +150,43 @@ def render():
 
     st.caption(f"Last updated: {brain.updated_at[:10] if brain.updated_at else 'unknown'}")
 
+    # ── Sources & Status ──────────────────────────────────────────────────────
+    st.markdown("<div style='margin-top:2rem;'></div>", unsafe_allow_html=True)
+    st.markdown("<div class='mw-section-label'>Brand Brain Sources & Status</div>", unsafe_allow_html=True)
+
+    from execution.brand_vault import load_vault_meta, vault_asset_count, vault_has_visuals
+    from execution.distribution_store import load_distribution, dist_configured_count
+    from execution.profile_store import load_profile
+
+    vault_meta   = load_vault_meta(selected_id)
+    vault_count  = vault_asset_count(selected_id)
+    has_visuals  = vault_has_visuals(selected_id)
+    dist         = load_distribution(selected_id)
+    dist_count   = dist_configured_count(dist)
+    profile      = load_profile(selected_id)
+    profile_updated = profile.get("updated_at", "")[:10] or "not set"
+
+    def _src_row(icon, label, value, status_color, status_label):
+        return (
+            f'<div style="display:flex; align-items:center; gap:12px; padding:8px 0; border-bottom:1px solid #1E1E1E;">'
+            f'<span style="font-size:18px; min-width:24px;">{icon}</span>'
+            f'<div style="flex:1;">'
+            f'<div style="font-size:13px; color:#F0EDE8; font-weight:500;">{label}</div>'
+            f'<div style="font-size:11px; color:#8A8480;">{value}</div>'
+            f'</div>'
+            f'<span style="font-size:11px; color:{status_color}; font-weight:600;">{status_label}</span>'
+            f'</div>'
+        )
+
+    rows = (
+        _src_row("📄", "Artist Profile",   f"data/artists/{selected_id}.json · last saved: {brain.updated_at[:10] if brain.updated_at else '?'}",  "#22C55E", "Loaded") +
+        _src_row("🗂️", "Extended Profile", f"data/artists/{selected_id}_profile.json · updated: {profile_updated}", "#22C55E" if profile.get("cultural_pillars") else "#F59E0B", "Active" if profile.get("cultural_pillars") else "Minimal") +
+        _src_row("📸", "Brand Vault",      f"{vault_count} asset(s) uploaded — {'visuals present' if has_visuals else 'no visuals yet'}", "#22C55E" if has_visuals else "#F59E0B", "Ready" if has_visuals else "Needs assets") +
+        _src_row("🚀", "Distribution",     f"{dist_count} destination(s) configured",  "#22C55E" if dist_count > 0 else "#F59E0B", "Configured" if dist_count > 0 else "Not set") +
+        _src_row("🧠", "Creative DNA",     "Loaded from artist JSON — visual keywords, palette, lighting", "#22C55E", "Active")
+    )
+    render_html(f'<div class="mw-card" style="padding:0.5rem 1.5rem;">{rows}</div>')
+
 
 def _section(title: str, content_html: str):
     render_html(f"""

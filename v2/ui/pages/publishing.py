@@ -1,4 +1,4 @@
-"""MusicWorks™ V3 — Publishing page."""
+"""MusicWorks™ V3.1 — Publishing page."""
 import sys
 import json
 from pathlib import Path
@@ -8,6 +8,10 @@ sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 import streamlit as st
 from ui.components import page_header, navigate_to, render_html
 from execution.asset_library import AssetLibrary
+from execution.distribution_store import (
+    load_distribution, dist_configured_count, dist_platform_display, PLATFORM_ICONS
+)
+from brand_brain.artist_library import list_artists
 
 
 @st.cache_resource
@@ -17,6 +21,9 @@ def _get_library():
 
 def render():
     page_header("Publishing", "Review approved assets and publish your campaign.", "🚀")
+
+    # ── Distribution Destinations block ───────────────────────────────────────
+    _render_distribution_status()
 
     try:
         lib = _get_library()
@@ -120,6 +127,70 @@ def render():
     **Publishing reminder:** Replace `[STREAMING_LINK]` and `[DEVOTIONAL_LINK]` with live URLs before posting.
     Confirm the streaming link is live on all platforms before sharing social captions.
     """)
+
+
+def _render_distribution_status():
+    """Show distribution destinations configured for the active artist."""
+    artists = list_artists()
+    if not artists:
+        return
+
+    artist_id = artists[0]["artist_id"]
+    artist_name = artists[0]["artist_name"]
+    dist = load_distribution(artist_id)
+    count = dist_configured_count(dist)
+
+    st.markdown("<div class='mw-section-label'>Publishing Destinations — {}</div>".format(artist_name), unsafe_allow_html=True)
+
+    if count == 0:
+        col_warn, col_btn = st.columns([3, 1])
+        with col_warn:
+            render_html("""
+            <div class="mw-card" style="padding:1rem 1.5rem; border-left:3px solid #F59E0B; margin-bottom:0.5rem;">
+                <div style="font-size:14px; font-weight:600; color:#F59E0B;">No publishing destinations configured yet.</div>
+                <div style="font-size:13px; color:#8A8480; margin-top:4px;">Set up your channels so MusicWorks can include them in your publishing checklist.</div>
+            </div>
+            """)
+        with col_btn:
+            if st.button("Set Up Distribution", type="primary", use_container_width=True, key="pub_setup_dist"):
+                st.session_state.managing_artist_id = artist_id
+                navigate_to("artists")
+        st.markdown("<div style='margin-bottom:1.5rem;'></div>", unsafe_allow_html=True)
+        return
+
+    platforms = dist_platform_display(dist)
+    configured = [p for p in platforms if p["set"] and p["section"] in ("social", "streaming", "owned")]
+
+    # Show as compact grid
+    cols_per_row = 3
+    rows = [configured[i:i+cols_per_row] for i in range(0, len(configured), cols_per_row)]
+    for row in rows:
+        cols = st.columns(cols_per_row)
+        for col, p in zip(cols, row):
+            with col:
+                render_html(
+                    f'<div class="mw-card" style="padding:0.75rem 1rem; margin-bottom:0.5rem;">'
+                    f'<div style="font-size:18px; margin-bottom:4px;">{p["icon"]}</div>'
+                    f'<div style="font-size:12px; font-weight:600; color:#F0EDE8;">{p["label"]}</div>'
+                    f'<div style="font-size:11px; color:#22C55E; margin-top:2px;">Manual URL saved</div>'
+                    f'<div style="font-size:10px; color:#6A6460; margin-top:2px; word-break:break-all;">{p["value"]}</div>'
+                    f'</div>'
+                )
+
+    # Show unconfigured platforms briefly
+    unconfigured = [p for p in platforms if not p["set"] and p["section"] in ("social", "streaming")]
+    if unconfigured:
+        uncfg_html = " · ".join(f'{p["icon"]} {p["label"]}' for p in unconfigured)
+        render_html(
+            f'<div style="font-size:11px; color:#6A6460; margin-bottom:0.5rem;">'
+            f'Not yet configured: {uncfg_html} — '
+            f'<a style="color:#D4A853;" href="#">Set up in Artists → Distribution</a></div>'
+        )
+        if st.button("+ Configure more destinations", key="pub_add_dist"):
+            st.session_state.managing_artist_id = artist_id
+            navigate_to("artists")
+
+    st.markdown("<div style='margin-bottom:1.5rem;'></div>", unsafe_allow_html=True)
 
 
 def _build_checklist(lib: AssetLibrary, campaign_id: str, approved: list) -> str:

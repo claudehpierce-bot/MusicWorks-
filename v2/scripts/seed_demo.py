@@ -42,6 +42,7 @@ def seed_demo(silent: bool = False) -> bool:
         print("Seeding Fire & Flow Gospel / HLANGANA demo data...")
 
     _ensure_data_files()
+    _seed_extended_profile()
     _seed_assets(lib, silent)
 
     if not silent:
@@ -70,6 +71,66 @@ def _ensure_data_files():
             json.dumps(_SONG_DATA, indent=2, ensure_ascii=False),
             encoding="utf-8",
         )
+
+
+def _seed_extended_profile():
+    """Seed Fire & Flow Gospel extended profile (cultural pillars, cities, etc.)."""
+    from execution.profile_store import load_profile, save_profile
+    profile = load_profile(ARTIST_ID)
+    if profile.get("cultural_pillars"):
+        return  # Already set
+
+    save_profile(ARTIST_ID, {
+        "cultural_pillars": [
+            "Gospel mission — every lyric points to Christ",
+            "Urban confidence — rap skill and lyrical depth as prophetic proclamation",
+            "Youth movement — next generation of African and Caribbean believers",
+            "Afro-Caribbean-American identity — the lens for all creative decisions",
+            "Kingdom Words — recovering African and global language theology",
+            "Diaspora bridge — music for those living between cultures",
+        ],
+        "cities_of_influence": [
+            "New York City",
+            "London",
+            "Lagos",
+            "Port of Spain",
+            "Johannesburg",
+            "Accra",
+        ],
+        "countries_of_influence": [
+            "USA",
+            "UK",
+            "Nigeria",
+            "Ghana",
+            "Trinidad and Tobago",
+            "South Africa",
+            "Jamaica",
+            "Barbados",
+        ],
+        "target_audience": (
+            "Christian youth and young adults in the African and Caribbean diaspora, ages 18-35. "
+            "Culturally bilingual — fluent in their heritage and in their adopted country. "
+            "Faithful but not religious. Gospel-hungry but genre-curious. "
+            "Looking for music that sounds like them AND sounds like God."
+        ),
+        "ministry_focus": (
+            "Discipleship through music. "
+            "Kingdom Words teaching series — recovering African and global language theology for the Church. "
+            "Church community building through gathering-centered songs. "
+            "Pastoral partnerships for devotional guide distribution."
+        ),
+        "visual_style_notes": (
+            "Deep indigo and warm gold. Authentic African and Caribbean settings — never generic stock. "
+            "Warm, communal, rooted in place. Festival energy (Fire persona) and intimate devotional (Flow persona). "
+            "Urban confidence meets gospel mission. Both aesthetics live in the same brand."
+        ),
+        "notes": (
+            "Rap skill and lyrical depth are central — not just worship melody but prophetic proclamation. "
+            "The Afro-Caribbean-American identity is the lens through which all creative decisions flow. "
+            "Africa, Trinidad & Tobago, and New York City are all present in the sound and the visual world. "
+            "Never sanitize the culture for a mainstream Christian market."
+        ),
+    })
 
 
 def _seed_assets(lib, silent: bool):
