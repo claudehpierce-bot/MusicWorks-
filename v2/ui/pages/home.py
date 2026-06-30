@@ -20,14 +20,11 @@ def render():
     hour = datetime.now().hour
     greeting = "Good morning" if hour < 12 else ("Good afternoon" if hour < 17 else "Good evening")
 
-    st.markdown(
-        f"""<div style="margin-bottom:1.5rem;">
-            <h1 style="margin:0 0 4px 0;">{greeting}, Founder</h1>
-            <p style="color:#8A8480; font-size:15px; margin:0;">
-                MusicWorks™ is ready. Here's where things stand.
-            </p>
-        </div>""",
-        unsafe_allow_html=True,
+    render_html(
+        f'<div style="margin-bottom:1.5rem;">'
+        f'<h1 style="margin:0 0 4px 0;">{greeting}, Founder</h1>'
+        f'<p style="color:#8A8480;font-size:15px;margin:0;">MusicWorks™ is ready. Here\'s where things stand.</p>'
+        f'</div>'
     )
 
     # ── Load data ─────────────────────────────────────────────────────────────
@@ -125,8 +122,7 @@ def render():
     with col_b:
         if st.button("🚀  Build Campaign", type="secondary", use_container_width=True):
             if active_campaign:
-                # Go to wizard at Build step with existing campaign context
-                navigate_to("wizard")
+                navigate_to("campaigns")
             else:
                 _new_project()
     with col_c:
@@ -134,15 +130,6 @@ def render():
             if active_campaign:
                 st.session_state.approval_campaign_id = active_campaign
             navigate_to("approval")
-
-    st.markdown("<div style='margin-bottom:1.5rem;'></div>", unsafe_allow_html=True)
-
-    # ── Metrics row ───────────────────────────────────────────────────────────
-    m1, m2, m3, m4 = st.columns(4)
-    m1.metric("Total Assets", total)
-    m2.metric("Approved", approved)
-    m3.metric("Pending Approval", pending)
-    m4.metric("Active Campaigns", len(campaign_ids))
 
     st.markdown("<div style='margin-bottom:1.5rem;'></div>", unsafe_allow_html=True)
 
@@ -160,22 +147,15 @@ def render():
             ("Jul 7", "10:00 AM","Media Outreach",  "Press release"),
             ("Jul 10","9:00 AM", "Instagram",       "Behind-the-song"),
         ]
-        entries_html = ""
-        for date_s, time_s, platform, note in calendar:
-            entries_html += f"""
-            <div style="display:flex; align-items:flex-start; gap:10px; padding:8px 0;
-                        border-bottom:1px solid #1E1E1E;">
-                <div style="min-width:36px; font-size:10px; color:#D4A853; font-weight:600;
-                            padding-top:2px; white-space:nowrap;">{date_s}</div>
-                <div style="min-width:52px; font-size:10px; color:#8A8480;
-                            padding-top:2px; white-space:nowrap;">{time_s}</div>
-                <div>
-                    <div style="font-size:12px; color:#F0EDE8; font-weight:500;">{platform}</div>
-                    <div style="font-size:11px; color:#8A8480;">{note}</div>
-                </div>
-            </div>
-            """
-        st.markdown(f'<div class="mw-card" style="padding:1rem;">{entries_html}</div>', unsafe_allow_html=True)
+        entries_html = "".join(
+            f'<div style="display:flex;align-items:flex-start;gap:10px;padding:8px 0;border-bottom:1px solid #1E1E1E;">'
+            f'<div style="min-width:36px;font-size:10px;color:#D4A853;font-weight:600;padding-top:2px;white-space:nowrap;">{date_s}</div>'
+            f'<div style="min-width:52px;font-size:10px;color:#8A8480;padding-top:2px;white-space:nowrap;">{time_s}</div>'
+            f'<div><div style="font-size:12px;color:#F0EDE8;font-weight:500;">{platform}</div>'
+            f'<div style="font-size:11px;color:#8A8480;">{note}</div></div></div>'
+            for date_s, time_s, platform, note in calendar
+        )
+        render_html(f'<div class="mw-card" style="padding:1rem;">{entries_html}</div>')
 
     with right:
         st.markdown("<div class='mw-section-label'>Quick Actions</div>", unsafe_allow_html=True)
@@ -212,23 +192,19 @@ def render():
                 at_fmt = dt.strftime("%b %d at %H:%M UTC")
             except Exception:
                 at_fmt = at[:10] if at else ""
-
             dot_color = {
                 "APPROVED": "#22C55E",
                 "REJECTED": "#EF4444",
                 "REVISION_REQUESTED": "#60A5FA",
             }.get(decision, "#F59E0B")
-
-            entries_html += f"""
-            <div class="timeline-entry">
-                <div class="timeline-dot" style="background:{dot_color};"></div>
-                <div>
-                    <div style="font-size:13px; color:#F0EDE8;">{desc}</div>
-                    <div style="font-size:11px; color:#8A8480;">{status_badge(decision)} · {at_fmt}</div>
-                </div>
-            </div>
-            """
-        st.markdown(f'<div class="mw-card" style="padding:1rem 1.5rem;">{entries_html}</div>', unsafe_allow_html=True)
+            entries_html += (
+                f'<div class="timeline-entry">'
+                f'<div class="timeline-dot" style="background:{dot_color};"></div>'
+                f'<div><div style="font-size:13px;color:#F0EDE8;">{desc}</div>'
+                f'<div style="font-size:11px;color:#8A8480;">{status_badge(decision)} · {at_fmt}</div>'
+                f'</div></div>'
+            )
+        render_html(f'<div class="mw-card" style="padding:1rem 1.5rem;">{entries_html}</div>')
     else:
         render_html("""
         <div class="mw-card" style="text-align:center; padding:2rem; color:#8A8480;">
