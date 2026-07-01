@@ -81,7 +81,7 @@ def _render_provider_library():
 
 
 def _render_provider_card(col, provider):
-    from execution.connections_store import record_test, test_connection
+    from execution.connections_store import record_test, test_connection, get_connection_status
 
     key = provider.key
 
@@ -89,7 +89,7 @@ def _render_provider_card(col, provider):
     if provider.requires_api_key:
         connected = is_api_key_set(key)
         status_dot   = "🟢" if connected else "⚫"
-        status_label = "Connected" if connected else "No API key"
+        status_label = "Connected" if connected else "Not Connected"
         status_color = "#22C55E" if connected else "#6A6460"
     else:
         connected = is_subscription_active(key)
@@ -105,11 +105,21 @@ def _render_provider_card(col, provider):
     warn  = renewal_warning(key)
     days  = days_until_renewal(key)
 
+    # Last tested
+    test_status = get_connection_status(key)
+    last_tested = test_status.get("last_tested", "")
+    if last_tested:
+        last_tested_label = f"Last tested: {last_tested[:16].replace('T', ' ')} UTC"
+        last_tested_color = "#22C55E" if test_status.get("last_status") == "connected" else "#EF4444"
+    else:
+        last_tested_label = "Last tested: Never"
+        last_tested_color = "#6A6460"
+
     border_color = "#22C55E" if connected else "#2A2A2A"
 
     with col:
         render_html(f"""
-        <div class="mw-card" style="padding:1rem; border-top:3px solid {border_color}; margin-bottom:0.5rem; min-height:190px;">
+        <div class="mw-card" style="padding:1rem; border-top:3px solid {border_color}; margin-bottom:0.5rem; min-height:230px;">
             <div style="display:flex; align-items:flex-start; gap:10px; margin-bottom:8px;">
                 <span style="font-size:22px; margin-top:2px;">{provider.icon}</span>
                 <div style="flex:1;">
@@ -117,24 +127,28 @@ def _render_provider_card(col, provider):
                     <div style="font-size:10px; color:{status_color}; font-weight:600;">{status_dot} {status_label}</div>
                 </div>
             </div>
-            <div style="font-size:11px; color:#8A8480; line-height:1.5; margin-bottom:8px;">{provider.description[:80]}{'…' if len(provider.description) > 80 else ''}</div>
+            <div style="font-size:11px; color:#8A8480; line-height:1.5; margin-bottom:8px;">{provider.description[:90]}{'…' if len(provider.description) > 90 else ''}</div>
 
-            <div style="display:flex; flex-wrap:wrap; gap:4px; margin-bottom:8px;">
+            <div style="display:flex; flex-wrap:wrap; gap:4px; margin:6px 0 8px 0;">
                 {''.join(f'<span style="background:#1E1E1E; color:#8A8480; font-size:9px; padding:2px 6px; border-radius:10px;">{cap.replace("_"," ")}</span>' for cap in provider.capabilities[:4])}
             </div>
 
-            {f'<div style="font-size:10px; color:#6A6460;">Env: <code style="color:#9B89D4;">{provider.env_var}</code></div>' if provider.env_var else '<div style="font-size:10px; color:#6A6460;">Subscription only</div>'}
+            {f'<div style="font-size:10px; color:#6A6460;">Env: <code style="color:#9B89D4;">{provider.env_var}</code></div>' if provider.env_var else '<div style="font-size:10px; color:#6A6460;">Subscription only — no API key</div>'}
+            <div style="font-size:10px; color:{last_tested_color}; margin-top:3px;">{last_tested_label}</div>
 
             {f'<div style="font-size:10px; margin-top:4px; color:{PLAN_COLORS.get(plan,"#6A6460")}; font-weight:600;">{PLAN_LABELS.get(plan, "")}{"  ·  " + rd[:10] if rd else ""}</div>' if plan else ""}
             {f'<div style="font-size:10px; color:{"#EF4444" if days is not None and days < 0 else "#F59E0B"};">{warn}</div>' if warn else ""}
             {f'<div style="font-size:10px; color:#8A8480;">Credits: {cred}</div>' if cred is not None else ""}
+
+            {'<div style="margin-top:6px;"><span style="background:#F59E0B22; color:#F59E0B; font-size:9px; font-weight:600; padding:2px 8px; border-radius:10px;">🔧 Available for future integration</span></div>' if not provider.live_implemented else ''}
+            {f'<div style="margin-top:6px;"><a href="{provider.provider_url}" target="_blank" style="font-size:10px; color:#9B89D4; text-decoration:none;">📄 Documentation →</a></div>' if provider.provider_url else ''}
         </div>
         """)
 
         # Buttons row
         b1, b2 = col.columns(2)
         with b1:
-            if st.button("Test", key=f"tst_{key}", use_container_width=True):
+            if st.button("Test Connection", key=f"tst_{key}", use_container_width=True):
                 with st.spinner(f"Testing {provider.name}…"):
                     ok, msg = test_connection(key)
                 if ok:
@@ -306,39 +320,60 @@ def _render_routing_table():
 # ── How to Configure ─────────────────────────────────────────────────────────
 
 def _render_how_to_configure():
+    from execution.provider_registry import PROVIDERS
+
     render_html("""
     <div style="font-size:13px; color:#C8C4BE; line-height:1.8;">
         <strong style="color:#D4A853; font-size:15px;">Option 1 — Streamlit Cloud (recommended for deployment)</strong><br>
-        Go to your app → <strong>Settings → Secrets</strong> → paste keys in TOML format:<br>
-        <pre style="background:#0A0A0A; padding:1rem; border-radius:8px; font-size:12px; margin:0.5rem 0 1.5rem 0; border:1px solid #1E1E1E;">
-ANTHROPIC_API_KEY   = "sk-ant-..."
-ELEVENLABS_API_KEY  = "..."
-GOOGLE_VEO_API_KEY  = "..."
-LEONARDO_API_KEY    = "..."
-PERPLEXITY_API_KEY  = "..."
-HEYGEN_API_KEY      = "..."
-        </pre>
+        Go to your app → <strong>Settings → Secrets</strong> → paste keys in TOML format.<br>
 
         <strong style="color:#D4A853; font-size:15px;">Option 2 — Local development</strong><br>
-        Create <code>.streamlit/secrets.toml</code> in the project root with the same format above.<br><br>
+        Create <code>.streamlit/secrets.toml</code> in the project root with the same format below.<br><br>
 
         <strong style="color:#D4A853; font-size:15px;">Option 3 — Environment variables</strong><br>
-        Set <code>ANTHROPIC_API_KEY=sk-ant-...</code> in your shell or system environment.<br><br>
+        Set the same variable names in your shell, system environment, or a local <code>.env</code> file
+        (see <code>.env.example</code> in the project root).<br><br>
+    </div>
+    """)
 
-        <strong style="color:#D4A853; font-size:15px;">Subscription-only tools (CapCut, Vizard, Pictory)</strong><br>
-        These tools don't have APIs. Mark their subscription as active in the Provider Library above
-        so MusicWorks knows they're available and can include them in routing.<br><br>
+    # ── Complete secrets template, generated from the provider registry ────────
+    # This is the single source of truth — every provider is listed here, no exceptions.
+    # Uses st.code() (not raw HTML <pre>) so line breaks always render correctly.
+    live_keyed    = [p for p in PROVIDERS if p.requires_api_key and p.live_implemented]
+    future_keyed  = [p for p in PROVIDERS if p.requires_api_key and not p.live_implemented and p.env_var]
+    sub_only      = [p for p in PROVIDERS if not p.requires_api_key and p.env_var]
+    no_key        = [p for p in PROVIDERS if not p.env_var]
 
-        <strong style="color:#D4A853; font-size:15px;">Publishing platforms</strong><br>
-        Platform keys (Instagram, TikTok, YouTube, etc.) enable future automated publishing.
-        MusicWorks prepares content for manual publishing today.
-        No platform keys are required for the core Media Factory to operate.<br><br>
+    def _toml_block(providers):
+        width = max((len(p.env_var) for p in providers), default=0)
+        return "\n".join(f'{p.env_var.ljust(width)} = "..."   # {p.name} — {p.description[:50]}' for p in providers)
+
+    st.markdown("**🟢 Live today — connecting these activates real generation**")
+    st.code(_toml_block(live_keyed), language="toml")
+
+    st.markdown("**🔧 Available for future integration — safe to set now, no live worker uses them yet**")
+    st.code(_toml_block(future_keyed), language="toml")
+
+    st.markdown("**📎 Subscription-only tools** — no API key checked; mark the subscription active in the Provider Library above instead")
+    st.code(_toml_block(sub_only), language="toml")
+
+    render_html(f"""
+    <div style="font-size:13px; color:#C8C4BE; line-height:1.8;">
+        <div style="font-size:12px; color:#8A8480; margin-bottom:1rem;">
+            <strong style="color:#8A8480;">No key required:</strong>
+            {', '.join(p.name for p in no_key)} — {no_key[0].description if len(no_key) == 1 else "distribution metadata / URLs only, nothing to authenticate"}.
+        </div>
+
+        <strong style="color:#D4A853; font-size:15px;">Publishing &amp; newsletter platforms</strong><br>
+        These enable future automated publishing. MusicWorks prepares content for manual publishing today —
+        no platform keys are required for the core Media Factory to operate.<br><br>
 
         <strong style="color:#F59E0B; font-size:14px;">Adding a new provider in the future</strong><br>
-        1. Add a <code>Provider()</code> entry to <code>provider_registry.py</code><br>
+        1. Add a <code>Provider()</code> entry to <code>provider_registry.py</code> (this page and the secrets
+        template above update automatically — nothing else to edit)<br>
         2. Add it to the routing table in <code>provider_router.py</code> (primary or fallback)<br>
-        3. Set its API key in secrets<br>
-        Everything else (UI cards, routing, fallback) works automatically.
+        3. Set <code>live_implemented=True</code> once a worker actually calls its real API<br>
+        4. Set its API key in secrets
     </div>
     """)
 

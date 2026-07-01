@@ -21,6 +21,7 @@ class Provider:
     requires_api_key: bool = True   # False = subscription-only tool (no API)
     provider_url:    str = ""
     mock_available:  bool = True
+    live_implemented: bool = False  # True = a worker actually calls this provider's real API today
 
 
 PROVIDERS: list[Provider] = [
@@ -30,7 +31,7 @@ PROVIDERS: list[Provider] = [
              "Long-form content: blog posts, emails, press releases, captions, church outreach",
              ["blog", "email", "captions", "press_release", "church_outreach",
               "lyric_commentary", "storytelling", "short_caption"],
-             provider_url="https://claude.ai"),
+             provider_url="https://claude.ai", live_implemented=True),
 
     Provider("perplexity", "Perplexity", "Research", "PERPLEXITY_API_KEY", "🔍", "#20B2AA",
              "AI-powered research: trend analysis, scripture context, gospel discovery, fact checking",
@@ -38,14 +39,14 @@ PROVIDERS: list[Provider] = [
              provider_url="https://perplexity.ai"),
 
     # ── Video Generation ───────────────────────────────────────────────────────
-    Provider("veo", "Google Veo", "Video Generation", "GOOGLE_VEO_API_KEY", "🎥", "#FF6B2B",
-             "Cinematic AI video: Reels, Shorts, TikTok, music video scenes, Canvas",
-             ["cinematic_video", "music_video", "commercial", "reel", "short_video"],
-             provider_url="https://deepmind.google/technologies/veo"),
+    Provider("veo", "Google Veo", "Video Generation", "GOOGLE_VEO_API_KEY", "🎬", "#FF6B2B",
+             "Cinematic AI video: official music videos, trailers, visualizers, worship backgrounds",
+             ["cinematic_video", "music_video", "trailer", "visualizer", "worship_background"],
+             provider_url="https://deepmind.google/technologies/veo", live_implemented=True),
 
     Provider("hedra", "Hedra", "Video Generation", "HEDRA_API_KEY", "🎙️", "#9B89D4",
-             "AI talking-head avatar: devotional content, presenter clips, lip-sync without camera",
-             ["avatar", "lip_sync", "presenter", "devotional_video"],
+             "Artist presence: Shorts, Reels, TikTok, countdowns, artist intros, devotionals",
+             ["avatar", "lip_sync", "presenter", "devotional_video", "reel", "short_video", "countdown"],
              provider_url="https://www.hedra.com"),
 
     Provider("heygen", "HeyGen", "Video Generation", "HEYGEN_API_KEY", "🧑‍💻", "#6366F1",
@@ -139,6 +140,13 @@ PROVIDERS: list[Provider] = [
              "Beehiiv newsletter publishing and subscriber growth",
              ["email_publish", "newsletter", "subscriber_growth"],
              provider_url="https://beehiiv.com"),
+
+    # ── Website ───────────────────────────────────────────────────────────────
+    Provider("website", "Website", "Website", "WEBSITE_URL", "🌐", "#6A6460",
+             "Artist website for blog posts and devotional guides",
+             ["blog_publish", "devotional_guide"],
+             mock_available=False,
+             provider_url=""),
 
     # ── Distribution ─────────────────────────────────────────────────────────
     Provider("distrokid", "DistroKid", "Distribution", "", "🎵", "#8B5CF6",

@@ -5,7 +5,9 @@ from dotenv import load_dotenv
 load_dotenv()
 
 ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY")
-CANVA_API_TOKEN = os.getenv("CANVA_API_TOKEN", "")
+# CANVA_API_KEY is the canonical variable (see provider_registry.py); CANVA_API_TOKEN
+# is a legacy alias from V2 kept for backward compatibility.
+CANVA_API_TOKEN = os.getenv("CANVA_API_KEY") or os.getenv("CANVA_API_TOKEN", "")
 CANVA_TEMPLATE_ID = os.getenv("CANVA_KINGDOM_WORDS_TEMPLATE_ID", "")
 
 BASE_DIR = Path(__file__).parent

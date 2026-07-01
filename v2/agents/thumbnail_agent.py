@@ -63,7 +63,7 @@ RETURN ONLY A VALID JSON OBJECT. No other text. No markdown fences.
 
 
 def run(song: SongInput, campaign: CampaignPlan, brand_context: str = "") -> dict:
-    canva_configured = bool(os.getenv("CANVA_API_TOKEN"))
+    canva_configured = bool(os.getenv("CANVA_API_KEY") or os.getenv("CANVA_API_TOKEN"))
 
     user_message = f"""Produce the thumbnail and visual asset package for this song.
 
