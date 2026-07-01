@@ -1,4 +1,5 @@
 """MusicWorks™ V3 — Executive Interface."""
+import os
 import sys
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent))
@@ -15,6 +16,20 @@ st.set_page_config(
 
 
 @st.cache_resource
+def _bootstrap_secrets():
+    """Copy Streamlit Cloud secrets (st.secrets) into os.environ once on cold
+    start. Every worker/config module reads API keys via os.environ — without
+    this bridge, keys set in Settings -> Secrets are never detected."""
+    try:
+        for key, value in st.secrets.items():
+            if isinstance(value, str) and key not in os.environ:
+                os.environ[key] = value
+    except Exception:
+        pass
+    return True
+
+
+@st.cache_resource
 def _bootstrap_demo():
     """Seed demo data once on cold start if database is empty. Runs once per server instance."""
     try:
@@ -25,6 +40,7 @@ def _bootstrap_demo():
     return True
 
 
+_bootstrap_secrets()
 _bootstrap_demo()
 
 inject_styles()
