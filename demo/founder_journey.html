@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MusicWorks™ V5 — Founder Journey Demo</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: #000;
+    font-family: -apple-system, BlinkMacSystemFont, 'Inter', sans-serif;
+    height: 100vh;
+    overflow: hidden;
+    user-select: none;
+  }
+
+  /* ── Journey bar ── */
+  #journey-bar {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 100;
+    background: rgba(0,0,0,0.92);
+    border-bottom: 1px solid #222;
+    padding: 10px 20px;
+    display: flex;
+    align-items: center;
+    gap: 0;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  #journey-bar::-webkit-scrollbar { display: none; }
+
+  .jstep {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 500;
+    color: #666;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: all 0.2s;
+    flex-shrink: 0;
+  }
+  .jstep:hover { color: #ccc; }
+  .jstep.active {
+    background: rgba(255,107,43,0.15);
+    color: #FF6B2B;
+    font-weight: 700;
+  }
+  .jstep.visited { color: #888; }
+  .jstep.group-label {
+    color: #444;
+    font-size: 10px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    cursor: default;
+    padding-left: 14px;
+  }
+  .jsep {
+    color: #333;
+    font-size: 12px;
+    flex-shrink: 0;
+    padding: 0 2px;
+  }
+
+  /* ── Screen container ── */
+  #stage {
+    position: fixed;
+    top: 42px;
+    left: 0; right: 0;
+    bottom: 54px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+  }
+
+  .screen {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+    overflow-y: auto;
+    overflow-x: hidden;
+    scrollbar-width: thin;
+    scrollbar-color: #333 transparent;
+  }
+  .screen.active {
+    opacity: 1;
+    pointer-events: all;
+  }
+  .screen img {
+    width: 100%;
+    max-width: 1440px;
+    display: block;
+    flex-shrink: 0;
+  }
+
+  /* ── Hotspot overlays ── */
+  .screen-wrap {
+    position: relative;
+    width: 100%;
+    max-width: 1440px;
+    flex-shrink: 0;
+  }
+  .screen-wrap img {
+    width: 100%;
+    display: block;
+  }
+  .hotspot {
+    position: absolute;
+    cursor: pointer;
+    border-radius: 6px;
+    transition: background 0.15s;
+  }
+  .hotspot:hover {
+    background: rgba(255,107,43,0.12);
+    outline: 2px solid rgba(255,107,43,0.35);
+  }
+  .hotspot-label {
+    position: absolute;
+    bottom: -22px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(255,107,43,0.9);
+    color: white;
+    font-size: 10px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 10px;
+    white-space: nowrap;
+    opacity: 0;
+    transition: opacity 0.15s;
+    pointer-events: none;
+  }
+  .hotspot:hover .hotspot-label { opacity: 1; }
+
+  /* ── Bottom nav bar ── */
+  #nav-bar {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    z-index: 100;
+    background: rgba(0,0,0,0.95);
+    border-top: 1px solid #222;
+    padding: 10px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .nav-btn {
+    background: #1A1A1A;
+    border: 1px solid #333;
+    color: #C8C4BE;
+    padding: 7px 20px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .nav-btn:hover { background: #2A2A2A; color: #fff; }
+  .nav-btn:disabled { opacity: 0.3; cursor: default; }
+  .nav-btn.primary {
+    background: #FF6B2B;
+    border-color: #FF6B2B;
+    color: white;
+  }
+  .nav-btn.primary:hover { background: #e55a1e; }
+
+  #screen-counter {
+    font-size: 12px;
+    color: #666;
+    text-align: center;
+    line-height: 1.4;
+  }
+  #screen-counter strong { color: #C8C4BE; font-size: 14px; }
+
+  #progress-bar {
+    height: 3px;
+    background: #111;
+    position: fixed;
+    bottom: 54px;
+    left: 0; right: 0;
+    z-index: 101;
+  }
+  #progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #FF6B2B, #D4A853);
+    transition: width 0.3s ease;
+    border-radius: 0 2px 2px 0;
+  }
+
+  /* ── Keyboard hint ── */
+  #key-hint {
+    position: fixed;
+    bottom: 70px;
+    right: 20px;
+    background: rgba(0,0,0,0.7);
+    border: 1px solid #333;
+    border-radius: 8px;
+    padding: 6px 12px;
+    font-size: 11px;
+    color: #666;
+    z-index: 99;
+    opacity: 1;
+    transition: opacity 1s;
+  }
+  #key-hint.fade { opacity: 0; pointer-events: none; }
+
+  /* ── Screen title overlay ── */
+  #screen-title {
+    position: fixed;
+    top: 52px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 99;
+    background: rgba(0,0,0,0.8);
+    border: 1px solid #333;
+    border-radius: 0 0 10px 10px;
+    padding: 5px 18px;
+    font-size: 12px;
+    color: #8A8480;
+    white-space: nowrap;
+    pointer-events: none;
+  }
+  #screen-title strong { color: #F0EDE8; }
+</style>
+</head>
+<body>
+
+<!-- Journey navigation bar -->
+<div id="journey-bar">
+  <div class="jstep" onclick="goTo(0)" id="js0">🏠 Home</div>
+  <div class="jsep">›</div>
+  <div class="jstep group-label">Release Wizard</div>
+  <div class="jstep" onclick="goTo(1)" id="js1">Step 1 · Artist</div>
+  <div class="jsep">›</div>
+  <div class="jstep" onclick="goTo(2)" id="js2">Step 2 · Song</div>
+  <div class="jsep">›</div>
+  <div class="jstep" onclick="goTo(3)" id="js3">Step 3 · Details</div>
+  <div class="jsep">›</div>
+  <div class="jstep" onclick="goTo(4)" id="js4">Step 6 · Validate</div>
+  <div class="jsep">›</div>
+  <div class="jstep" onclick="goTo(5)" id="js5">Step 7 · Build</div>
+  <div class="jsep">›</div>
+  <div class="jstep" onclick="goTo(6)" id="js6">🏭 Media Factory</div>
+  <div class="jsep">›</div>
+  <div class="jstep" onclick="goTo(7)" id="js7">⭐ Release Ready</div>
+  <div class="jsep">›</div>
+  <div class="jstep" onclick="goTo(8)" id="js8">✅ Asset Review</div>
+  <div class="jsep">›</div>
+  <div class="jstep" onclick="goTo(9)" id="js9">🚀 Publishing</div>
+  <div class="jsep">›</div>
+  <div class="jstep" onclick="goTo(10)" id="js10">📚 Media Library</div>
+  <div class="jsep">›</div>
+  <div class="jstep" onclick="goTo(11)" id="js11">👥 Artists</div>
+  <div class="jsep">›</div>
+  <div class="jstep" onclick="goTo(12)" id="js12">⚙ Studio Mode</div>
+</div>
+
+<!-- Screen title -->
+<div id="screen-title"><strong id="title-text">Home</strong> — Creator Mode</div>
+
+<!-- Progress bar -->
+<div id="progress-bar"><div id="progress-fill" style="width:0%"></div></div>
+
+<!-- Stage -->
+<div id="stage">
+
+  <!-- 00 - Home Creator Mode -->
+  <div class="screen active" id="s0">
+    <div class="screen-wrap">
+      <img src="screenshots/01_home_creator.png" alt="Home — Creator Mode">
+      <!-- "Release a Song" card click area -->
+      <div class="hotspot" style="left:20%;top:26%;width:38%;height:16%;" onclick="goTo(1)">
+        <div class="hotspot-label">Start New Release</div>
+      </div>
+      <!-- "Start New Release ->" button -->
+      <div class="hotspot" style="left:20%;top:44%;width:38%;height:5%;" onclick="goTo(1)">
+        <div class="hotspot-label">Release a Song</div>
+      </div>
+      <!-- "Continue Release" card -->
+      <div class="hotspot" style="left:60%;top:26%;width:38%;height:16%;" onclick="goTo(8)">
+        <div class="hotspot-label">Continue Release</div>
+      </div>
+      <!-- "Manage Artists" card -->
+      <div class="hotspot" style="left:20%;top:55%;width:38%;height:16%;" onclick="goTo(11)">
+        <div class="hotspot-label">Manage Artists</div>
+      </div>
+      <!-- "View Results" card -->
+      <div class="hotspot" style="left:60%;top:55%;width:38%;height:16%;" onclick="goTo(12)">
+        <div class="hotspot-label">View Results / Studio</div>
+      </div>
+      <!-- Active Release: Review Assets -->
+      <div class="hotspot" style="left:13%;top:85%;width:24%;height:5%;" onclick="goTo(8)">
+        <div class="hotspot-label">Review Assets</div>
+      </div>
+      <!-- Active Release: Publishing -->
+      <div class="hotspot" style="left:38%;top:85%;width:24%;height:5%;" onclick="goTo(9)">
+        <div class="hotspot-label">Publishing</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 01 - Wizard Step 1 -->
+  <div class="screen" id="s1">
+    <div class="screen-wrap">
+      <img src="screenshots/02_wizard_step1.png" alt="Wizard Step 1 — Choose Artist">
+      <!-- "Continue with this artist" -->
+      <div class="hotspot" style="left:24%;top:83%;width:46%;height:7%;" onclick="goTo(2)">
+        <div class="hotspot-label">Continue with Fire &amp; Flow Gospel</div>
+      </div>
+      <!-- Back home -->
+      <div class="hotspot" style="left:1%;top:19%;width:16%;height:5%;" onclick="goTo(0)">
+        <div class="hotspot-label">Home</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 02 - Wizard Step 2 -->
+  <div class="screen" id="s2">
+    <div class="screen-wrap">
+      <img src="screenshots/03_wizard_step2.png" alt="Wizard Step 2 — Upload Song">
+      <!-- Next step -->
+      <div class="hotspot" style="left:24%;top:88%;width:20%;height:5%;" onclick="goTo(3)">
+        <div class="hotspot-label">Next Step</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 03 - Wizard Step 3 -->
+  <div class="screen" id="s3">
+    <div class="screen-wrap">
+      <img src="screenshots/04_wizard_step3.png" alt="Wizard Step 3 — Song Details">
+      <div class="hotspot" style="left:24%;top:88%;width:20%;height:5%;" onclick="goTo(4)">
+        <div class="hotspot-label">Next Step</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 04 - Wizard Step 6 -->
+  <div class="screen" id="s4">
+    <div class="screen-wrap">
+      <img src="screenshots/05_wizard_step6.png" alt="Wizard Step 6 — Validate">
+      <div class="hotspot" style="left:24%;top:88%;width:20%;height:5%;" onclick="goTo(5)">
+        <div class="hotspot-label">Next Step</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 05 - Wizard Step 7 (Build) -->
+  <div class="screen" id="s5">
+    <div class="screen-wrap">
+      <img src="screenshots/06_wizard_step7.png" alt="Wizard Step 7 — Launch Studio">
+      <!-- Launch Studio button -->
+      <div class="hotspot" style="left:24%;top:88%;width:25%;height:6%;" onclick="goTo(6)">
+        <div class="hotspot-label">Launch Studio</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 06 - Media Factory -->
+  <div class="screen" id="s6">
+    <div class="screen-wrap">
+      <img src="screenshots/07_media_factory.png" alt="Media Factory — Generating">
+      <!-- Asset Review -->
+      <div class="hotspot" style="left:24%;top:78%;width:25%;height:5%;" onclick="goTo(7)">
+        <div class="hotspot-label">View Release Assets</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 07 - Release Ready -->
+  <div class="screen" id="s7">
+    <div class="screen-wrap">
+      <img src="screenshots/08_release_ready.png" alt="Release Ready">
+      <!-- Asset Review -->
+      <div class="hotspot" style="left:24%;top:55%;width:60%;height:20%;" onclick="goTo(8)">
+        <div class="hotspot-label">Review Assets</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 08 - Asset Review -->
+  <div class="screen" id="s8">
+    <div class="screen-wrap">
+      <img src="screenshots/09_asset_review.png" alt="Asset Review — One at a Time">
+      <!-- Publishing button -->
+      <div class="hotspot" style="left:60%;top:82%;width:20%;height:5%;" onclick="goTo(9)">
+        <div class="hotspot-label">Go to Publishing</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 09 - Publishing -->
+  <div class="screen" id="s9">
+    <div class="screen-wrap">
+      <img src="screenshots/10_publishing.png" alt="Publishing">
+      <!-- Media Library -->
+      <div class="hotspot" style="left:1%;top:45%;width:16%;height:5%;" onclick="goTo(10)">
+        <div class="hotspot-label">Media Library</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 10 - Media Library -->
+  <div class="screen" id="s10">
+    <div class="screen-wrap">
+      <img src="screenshots/11_media_library.png" alt="Media Library">
+      <div class="hotspot" style="left:1%;top:38%;width:16%;height:5%;" onclick="goTo(11)">
+        <div class="hotspot-label">Artists</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 11 - Artist Management -->
+  <div class="screen" id="s11">
+    <div class="screen-wrap">
+      <img src="screenshots/12_artists.png" alt="Artist Management">
+      <div class="hotspot" style="left:1%;top:12%;width:16%;height:5%;" onclick="goTo(0)">
+        <div class="hotspot-label">Home</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 12 - Studio Mode Dashboard -->
+  <div class="screen" id="s12">
+    <div class="screen-wrap">
+      <img src="screenshots/13_studio_mode.png" alt="Studio Mode Dashboard">
+      <div class="hotspot" style="left:1%;top:12%;width:16%;height:5%;" onclick="goTo(0)">
+        <div class="hotspot-label">Back to Creator Mode</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Bottom nav -->
+<div id="nav-bar">
+  <button class="nav-btn" id="btn-prev" onclick="prev()" disabled>&#8592; Previous</button>
+
+  <div id="screen-counter">
+    <strong id="counter-title">Home</strong><br>
+    <span id="counter-sub">Screen 1 of 13</span>
+  </div>
+
+  <button class="nav-btn primary" id="btn-next" onclick="next()">Next &#8594;</button>
+</div>
+
+<div id="key-hint">&#8592; &#8594; arrow keys to navigate &nbsp;|&nbsp; click highlighted areas</div>
+
+<script>
+const SCREENS = [
+  { id: "s0",  title: "Home",                   sub: "Creator Mode",                journey: "js0"  },
+  { id: "s1",  title: "Release Wizard",          sub: "Step 1 — Choose Artist", journey: "js1"  },
+  { id: "s2",  title: "Release Wizard",          sub: "Step 2 — Upload Song",   journey: "js2"  },
+  { id: "s3",  title: "Release Wizard",          sub: "Step 3 — Song Details",  journey: "js3"  },
+  { id: "s4",  title: "Release Wizard",          sub: "Step 6 — Validate",      journey: "js4"  },
+  { id: "s5",  title: "Release Wizard",          sub: "Step 7 — Launch Studio", journey: "js5"  },
+  { id: "s6",  title: "Media Factory",           sub: "Assets Generating…",     journey: "js6"  },
+  { id: "s7",  title: "Release Ready",           sub: "Review your assets",          journey: "js7"  },
+  { id: "s8",  title: "Asset Review",            sub: "One asset at a time",         journey: "js8"  },
+  { id: "s9",  title: "Publishing",              sub: "Choose platforms & schedule", journey: "js9" },
+  { id: "s10", title: "Media Library",           sub: "Approved & published assets", journey: "js10" },
+  { id: "s11", title: "Artist Management",       sub: "Profile & brand brain",       journey: "js11" },
+  { id: "s12", title: "Studio Mode Dashboard",   sub: "All 15 pages unlocked",       journey: "js12" },
+];
+
+let current = 0;
+
+function goTo(n) {
+  if (n < 0 || n >= SCREENS.length) return;
+  // Hide current
+  document.getElementById(SCREENS[current].id).classList.remove("active");
+  document.getElementById(SCREENS[current].journey).classList.remove("active");
+  document.getElementById(SCREENS[current].journey).classList.add("visited");
+  // Show new
+  current = n;
+  const scr = SCREENS[current];
+  const el = document.getElementById(scr.id);
+  el.classList.add("active");
+  el.scrollTop = 0;
+  // Update journey bar
+  document.getElementById(scr.journey).classList.add("active");
+  document.getElementById(scr.journey).classList.remove("visited");
+  // Scroll journey bar item into view
+  document.getElementById(scr.journey).scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
+  // Update title
+  document.getElementById("title-text").textContent = scr.title;
+  document.getElementById("screen-title").lastChild.textContent = " — " + scr.sub;
+  // Counter
+  document.getElementById("counter-title").textContent = scr.title;
+  document.getElementById("counter-sub").textContent = "Screen " + (current + 1) + " of " + SCREENS.length + " · " + scr.sub;
+  // Buttons
+  document.getElementById("btn-prev").disabled = current === 0;
+  document.getElementById("btn-next").textContent = current === SCREENS.length - 1 ? "Restart ↺" : "Next →";
+  // Progress
+  const pct = (current / (SCREENS.length - 1)) * 100;
+  document.getElementById("progress-fill").style.width = pct + "%";
+}
+
+function next() {
+  if (current < SCREENS.length - 1) {
+    goTo(current + 1);
+  } else {
+    goTo(0);
+  }
+}
+
+function prev() {
+  if (current > 0) goTo(current - 1);
+}
+
+document.addEventListener("keydown", function(e) {
+  if (e.key === "ArrowRight" || e.key === " ") { e.preventDefault(); next(); }
+  if (e.key === "ArrowLeft")  { e.preventDefault(); prev(); }
+  if (e.key === "Home")       { e.preventDefault(); goTo(0); }
+  if (e.key === "End")        { e.preventDefault(); goTo(SCREENS.length - 1); }
+});
+
+// Fade out keyboard hint after 6s
+setTimeout(function() {
+  const h = document.getElementById("key-hint");
+  if (h) h.classList.add("fade");
+}, 6000);
+
+// Init
+goTo(0);
+</script>
+</body>
+</html>
