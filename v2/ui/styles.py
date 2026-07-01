@@ -492,6 +492,7 @@ hr { border-color: #242424 !important; }
 .mw-action-card-continue { background: linear-gradient(135deg, #0F1A2A 0%, #1A3A4A 100%); border: 1px solid rgba(96,165,250,0.2); }
 .mw-action-card-artists  { background: linear-gradient(135deg, #0F2A1A 0%, #1A4A2A 100%); border: 1px solid rgba(34,197,94,0.2); }
 .mw-action-card-results  { background: linear-gradient(135deg, #2A1A0F 0%, #3A2A0F 100%); border: 1px solid rgba(212,168,83,0.2); }
+.mw-action-card-library  { background: linear-gradient(135deg, #1A1A0F 0%, #3A3A1A 100%); border: 1px solid rgba(245,158,11,0.2); }
 
 /* ── V5 Asset filter sidebar ── */
 .mw-filter-list { background: #0D0D0D; border: 1px solid #1E1E1E; border-radius: 12px; padding: 0.5rem; margin-bottom: 1rem; }

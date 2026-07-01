@@ -1,4 +1,9 @@
-"""MusicWorks™ V3 — New Project Wizard (7-step integrated flow)."""
+"""MusicWorks™ V5 — Media Campaign Wizard (7-step integrated flow).
+
+Steps: Artist -> Creative Master -> Details & Lyrics -> Artwork ->
+Release Info -> Analysis -> Launch. Every step feeds the Creative Master
+(the uploaded song) so nothing downstream is guessed at random.
+"""
 import sys
 import json
 import re
@@ -19,7 +24,7 @@ DRAFT_PATH = Path(__file__).parent.parent.parent / "data" / "drafts" / "wizard_d
 SONGS_DIR.mkdir(parents=True, exist_ok=True)
 ARTISTS_DIR.mkdir(parents=True, exist_ok=True)
 
-STEPS = ["Artist", "Song", "Details", "Scripture", "Assets", "Validate", "Build"]
+STEPS = ["Artist", "Creative Master", "Details & Lyrics", "Artwork", "Release Info", "Analysis", "Launch"]
 
 # Campaign mode: display label → internal key
 CAMPAIGN_MODE_LABELS = OrderedDict([
@@ -110,31 +115,6 @@ def _clear_draft():
             DRAFT_PATH.unlink()
         except Exception:
             pass
-
-
-# ── Audio helpers ─────────────────────────────────────────────────────────────
-
-def _read_audio_duration(audio_file) -> int | None:
-    """Try to auto-detect duration in seconds from uploaded audio metadata."""
-    import io
-    try:
-        if audio_file.name.lower().endswith(".wav"):
-            import wave as _wave
-            data = audio_file.read()
-            audio_file.seek(0)
-            with _wave.open(io.BytesIO(data), "rb") as wf:
-                return int(wf.getnframes() / wf.getframerate())
-    except Exception:
-        pass
-    try:
-        import importlib
-        mutagen_mp3 = importlib.import_module("mutagen.mp3")
-        data = audio_file.read()
-        audio_file.seek(0)
-        return int(mutagen_mp3.MP3(io.BytesIO(data)).info.length)
-    except Exception:
-        pass
-    return None
 
 
 # ── STEP 0: ARTIST ────────────────────────────────────────────────────────────
@@ -238,19 +218,37 @@ def _create_artist_form():
             _go(1)
 
 
-# ── STEP 1: SONG ──────────────────────────────────────────────────────────────
+# ── STEP 1: CREATIVE MASTER ───────────────────────────────────────────────────
 
-def _step_song():
+@st.cache_data(show_spinner="Analyzing your Creative Master...")
+def _cached_analyze(file_bytes: bytes, filename: str) -> dict:
+    from execution.audio_analysis import analyze_audio
+    return analyze_audio(file_bytes, filename).to_dict()
+
+
+def _step_creative_master():
     d = st.session_state.wizard_data
-    st.markdown("### Step 2 — Upload Song")
+    st.markdown("### Step 2 — Upload Creative Master")
     st.caption(f"Artist: **{d.get('artist_name', '')}**")
+    st.caption(
+        "Upload the finished song. MusicWorks analyzes it immediately — this becomes "
+        "the foundation of every media asset in your campaign."
+    )
 
     col_a, col_b = st.columns(2)
+    analysis = None
+    file_bytes = None
+
     with col_a:
-        audio_file = st.file_uploader("Song file (MP3 or WAV) *", type=["mp3", "wav"])
+        audio_file = st.file_uploader("Creative Master (WAV, MP3, or FLAC) *", type=["wav", "mp3", "flac"])
         if audio_file:
+            file_bytes = audio_file.getvalue()
+            analysis = _cached_analyze(file_bytes, audio_file.name)
             st.audio(audio_file)
             st.caption(f"✓ {audio_file.name}  ·  {audio_file.size // 1024} KB")
+        elif d.get("audio_file_name") and d.get("audio_analysis"):
+            analysis = d["audio_analysis"]
+            st.caption(f"✓ On file: **{d['audio_file_name']}**  — upload a new file to replace it.")
         elif d.get("audio_file_name"):
             st.caption(f"✓ On file: **{d['audio_file_name']}**  — upload a new file to replace it.")
 
@@ -263,24 +261,40 @@ def _step_song():
         )
 
     with col_b:
-        auto_dur = _read_audio_duration(audio_file) if audio_file else None
-        if auto_dur:
-            st.caption(f"⚡ Duration detected from file: {auto_dur}s")
-        default_dur = auto_dur or d.get("duration_seconds") or 0
+        if analysis and analysis.get("energy_curve"):
+            st.caption("⚡ Waveform (energy over time) — AI-assisted estimate")
+            st.line_chart(analysis["energy_curve"])
+        if analysis and analysis.get("degraded") and analysis.get("degraded_reason"):
+            st.info(analysis["degraded_reason"])
+
+        default_dur = (analysis or {}).get("duration_seconds") or d.get("duration_seconds") or 0
         duration = st.number_input(
             "Duration (seconds):",
             min_value=0,
             value=int(default_dur),
             step=1,
-            help="Auto-detected from WAV files. Enter manually for MP3 if needed.",
+            help="Auto-detected from your upload — AI-assisted estimate, edit if needed.",
         )
-        bpm = st.number_input("BPM (optional):", min_value=0, value=int(d.get("bpm") or 0), step=1)
+        default_bpm = (analysis or {}).get("tempo_bpm") or d.get("bpm") or 0
+        bpm = st.number_input(
+            "BPM (optional):",
+            min_value=0,
+            value=int(default_bpm),
+            step=1,
+            help="Estimated from the waveform — AI-assisted estimate, edit if needed.",
+        )
         key = st.text_input("Key (optional):", value=d.get("key") or "", placeholder="e.g. G Major")
+
+        mood_tags = (analysis or {}).get("mood_tags")
+        if mood_tags:
+            from ui.components import tag_list_html
+            st.caption("Detected mood — AI-assisted estimate")
+            st.markdown(tag_list_html(mood_tags, "tag tag-gold"), unsafe_allow_html=True)
 
     render_html("""
     <div class="mw-card" style="padding:0.75rem 1rem; border-left:3px solid #F59E0B; margin-top:0.5rem;">
     <div style="font-size:12px; color:#F59E0B; font-weight:600; margin-bottom:2px;">Audio QC gate</div>
-    <div style="font-size:12px; color:#8A8480;">Upload the working mix now. You'll confirm QC sign-off in Step 6 (Validate) before the campaign builds.</div>
+    <div style="font-size:12px; color:#8A8480;">Upload the working mix now. You'll confirm QC sign-off in the Analysis step before the campaign builds.</div>
     </div>
     """)
 
@@ -291,7 +305,7 @@ def _step_song():
     with col2:
         if st.button("Continue →", type="primary"):
             if not audio_file and not d.get("audio_file_name"):
-                st.error("Please upload your song file to continue.")
+                st.error("Please upload your Creative Master to continue.")
             else:
                 artist_id = d.get("artist_id", "")
                 audio_path = d.get("audio_file_path", "")
@@ -299,7 +313,7 @@ def _step_song():
                     save_dir = ARTISTS_DIR / artist_id / "audio"
                     save_dir.mkdir(parents=True, exist_ok=True)
                     dest = save_dir / audio_file.name
-                    dest.write_bytes(audio_file.read())
+                    dest.write_bytes(file_bytes)
                     audio_path = str(dest)
                 d.update({
                     "audio_file_path": audio_path,
@@ -308,22 +322,22 @@ def _step_song():
                     "duration_seconds": duration or None,
                     "bpm": bpm or None,
                     "key": key or None,
+                    "audio_analysis": analysis or d.get("audio_analysis") or {},
                 })
                 _save_draft(d, 2)
                 _go(2)
 
 
-# ── STEP 2: SONG DETAILS ──────────────────────────────────────────────────────
+# ── STEP 2: DETAILS & LYRICS ──────────────────────────────────────────────────
 
-def _step_details():
+def _step_details_lyrics():
     from datetime import date as _date
     d = st.session_state.wizard_data
 
-    # Show any validation error at the top (not buried below the form)
     if st.session_state.get("_details_error"):
         st.error(st.session_state.pop("_details_error"))
 
-    st.markdown("### Step 3 — Song Details")
+    st.markdown("### Step 3 — Song Details & Lyrics")
     st.caption(f"Artist: **{d.get('artist_name', '')}**  ·  File: **{d.get('audio_file_name', '')}**")
 
     col_a, col_b = st.columns(2)
@@ -354,48 +368,28 @@ def _step_details():
         placeholder="Pronunciation guide, cultural context, or anything the AI should know about this song's language or cultural roots…",
     )
 
-    col1, col2 = st.columns(2)
-    with col1:
-        if st.button("← Back"):
-            _go(1)
-    with col2:
-        if st.button("Continue →", type="primary"):
-            missing = []
-            if not song_title.strip():
-                missing.append("Song title")
-            if not album_title.strip():
-                missing.append("Album title")
-            if missing:
-                st.session_state["_details_error"] = f"Required fields missing: {', '.join(missing)}"
-                st.rerun()
+    st.markdown("<div style='margin-top:1.25rem;'></div>", unsafe_allow_html=True)
+    st.markdown("<div class='mw-section-label'>Lyrics</div>", unsafe_allow_html=True)
+    st.caption("MusicWorks extracts lyrics to sync captions, lyric videos, and quote cards to what the song actually says.")
+
+    lyrics_text = d.get("lyrics_text", "") or ""
+    tab_paste, tab_upload = st.tabs(["Paste Lyrics", "Upload File"])
+    with tab_paste:
+        lyrics_text = st.text_area("Paste lyrics:", value=lyrics_text, height=180,
+                                    placeholder="Paste the full lyrics here…")
+    with tab_upload:
+        lyrics_file = st.file_uploader("Lyrics file (.txt, .docx, .pdf):", type=["txt", "docx", "pdf"], key="lyrics_upload")
+        if lyrics_file:
+            from execution.lyrics_extraction import extract_lyrics
+            extracted, err = extract_lyrics(lyrics_file)
+            if err:
+                st.error(err)
             else:
-                slug = re.sub(r"[^a-z0-9-]", "-", song_title.strip().lower())
-                artist_id = d.get("artist_id", "unknown")
-                song_id = d.get("song_id") or f"{artist_id[:8].replace('_', '-')}-{slug}-{uuid.uuid4().hex[:4]}"
-                d.update({
-                    "song_id": song_id,
-                    "title": song_title.strip(),
-                    "title_meaning": title_meaning.strip(),
-                    "title_language": title_language.strip(),
-                    "album_title": album_title.strip(),
-                    "release_date": str(release_date),
-                    "cultural_notes": cultural_notes.strip() or None,
-                })
-                _save_draft(d, 3)
-                _go(3)
+                lyrics_text = extracted
+                st.success(f"✓ Extracted {len(extracted.splitlines())} lines from {lyrics_file.name}")
+                st.text_area("Extracted lyrics preview:", value=lyrics_text, height=160, disabled=True)
 
-
-# ── STEP 3: SCRIPTURE & CAMPAIGN ─────────────────────────────────────────────
-
-def _step_scripture():
-    d = st.session_state.wizard_data
-
-    if st.session_state.get("_scripture_error"):
-        st.error(st.session_state.pop("_scripture_error"))
-
-    st.markdown("### Step 4 — Scripture & Campaign")
-    st.caption(f"**{d.get('title', '')}** · {d.get('artist_name', '')}")
-
+    st.markdown("<div style='margin-top:1.25rem;'></div>", unsafe_allow_html=True)
     st.markdown("<div class='mw-section-label'>Scripture Foundation</div>", unsafe_allow_html=True)
     scripture_primary = st.text_input(
         "Primary scripture *",
@@ -429,10 +423,12 @@ def _step_scripture():
             placeholder="e.g. Afro-Gospel, Amapiano Gospel",
         )
     with col_d:
+        default_mood = d.get("mood") or (d.get("audio_analysis") or {}).get("mood_tags", [])
         mood_raw = st.text_input(
             "Mood:",
-            value=", ".join(d.get("mood", [])),
+            value=", ".join(default_mood),
             placeholder="e.g. Devotional, Communal, Hopeful",
+            help="Pre-filled from your Creative Master's detected mood — edit freely.",
         )
 
     st.markdown("<div style='margin-top:1.25rem;'></div>", unsafe_allow_html=True)
@@ -458,10 +454,14 @@ def _step_scripture():
     col1, col2 = st.columns(2)
     with col1:
         if st.button("← Back"):
-            _go(2)
+            _go(1)
     with col2:
         if st.button("Continue →", type="primary"):
             missing = []
+            if not song_title.strip():
+                missing.append("Song title")
+            if not album_title.strip():
+                missing.append("Album title")
             if not scripture_primary.strip():
                 missing.append("Primary scripture")
             if not scripture_text.strip():
@@ -471,10 +471,21 @@ def _step_scripture():
             if not genre_raw.strip():
                 missing.append("Genre")
             if missing:
-                st.session_state["_scripture_error"] = f"Required fields missing: {', '.join(missing)}"
+                st.session_state["_details_error"] = f"Required fields missing: {', '.join(missing)}"
                 st.rerun()
             else:
+                slug = re.sub(r"[^a-z0-9-]", "-", song_title.strip().lower())
+                artist_id = d.get("artist_id", "unknown")
+                song_id = d.get("song_id") or f"{artist_id[:8].replace('_', '-')}-{slug}-{uuid.uuid4().hex[:4]}"
                 d.update({
+                    "song_id": song_id,
+                    "title": song_title.strip(),
+                    "title_meaning": title_meaning.strip(),
+                    "title_language": title_language.strip(),
+                    "album_title": album_title.strip(),
+                    "release_date": str(release_date),
+                    "cultural_notes": cultural_notes.strip() or None,
+                    "lyrics_text": lyrics_text.strip() or None,
                     "scripture_primary": scripture_primary.strip(),
                     "scripture_primary_text": scripture_text.strip(),
                     "scripture_supporting": [s.strip() for s in scripture_supporting.split(",") if s.strip()],
@@ -484,15 +495,15 @@ def _step_scripture():
                     "mode": campaign_mode,
                     "internal_notes": internal_notes.strip(),
                 })
-                _save_draft(d, 4)
-                _go(4)
+                _save_draft(d, 3)
+                _go(3)
 
 
-# ── STEP 4: ASSETS ────────────────────────────────────────────────────────────
+# ── STEP 3: ARTWORK ───────────────────────────────────────────────────────────
 
-def _step_assets():
+def _step_artwork():
     d = st.session_state.wizard_data
-    st.markdown("### Step 5 — Upload Assets")
+    st.markdown("### Step 4 — Upload Artwork")
     st.caption("Upload visual assets. Album cover is required to continue.")
 
     artist_id = d.get("artist_id", "unknown")
@@ -570,23 +581,132 @@ def _step_assets():
     col1, col2 = st.columns(2)
     with col1:
         if st.button("← Back"):
-            _go(3)
+            _go(2)
     with col2:
         if not has_cover:
             st.caption("Upload an album cover to continue.")
-        if st.button("Continue to Validation →", type="primary", disabled=not has_cover):
+        if st.button("Continue to Release Info →", type="primary", disabled=not has_cover):
+            _go(4)
+
+
+# ── STEP 4: RELEASE INFO ──────────────────────────────────────────────────────
+
+def _step_release_info():
+    from datetime import date as _date
+    d = st.session_state.wizard_data
+
+    st.markdown("### Step 5 — DistroKid Release Information")
+    st.caption(f"**{d.get('title', '')}** · {d.get('artist_name', '')}")
+    st.caption(
+        "MusicWorks doesn't distribute your music — DistroKid does. These details anchor "
+        "your media campaign to the actual release so every link points to the right place."
+    )
+
+    col_a, col_b = st.columns(2)
+    with col_a:
+        release_date = st.date_input(
+            "Release date *",
+            value=_date.fromisoformat(d["release_date"]) if d.get("release_date") else _date.today(),
+            key="ri_release_date",
+        )
+        isrc = st.text_input("ISRC:", value=d.get("isrc", "") or "", placeholder="e.g. QZK5X2412345")
+        upc = st.text_input("UPC:", value=d.get("upc", "") or "", placeholder="e.g. 850012345678")
+    with col_b:
+        streaming_url = st.text_input(
+            "Streaming URL (DistroKid smart link):",
+            value=d.get("streaming_url", "") or "",
+            placeholder="https://distrokid.com/hyperfollow/...",
+        )
+        album_url = st.text_input("Album URL:", value=d.get("album_url", "") or "", placeholder="https://...")
+        presave_url = st.text_input("Pre-save URL:", value=d.get("presave_url", "") or "", placeholder="https://...")
+
+    render_html("""
+    <div class="mw-card" style="padding:0.75rem 1rem; border-left:3px solid #9B89D4; margin-top:0.5rem;">
+    <div style="font-size:12px; color:#9B89D4; font-weight:600; margin-bottom:2px;">Campaign anchor</div>
+    <div style="font-size:12px; color:#8A8480;">Every link MusicWorks generates — captions, bios, thumbnails — points back here.</div>
+    </div>
+    """)
+
+    col1, col2 = st.columns(2)
+    with col1:
+        if st.button("← Back"):
+            _go(3)
+    with col2:
+        if st.button("Continue →", type="primary"):
+            d.update({
+                "release_date": str(release_date),
+                "isrc": isrc.strip() or None,
+                "upc": upc.strip() or None,
+                "streaming_url": streaming_url.strip() or None,
+                "album_url": album_url.strip() or None,
+                "presave_url": presave_url.strip() or None,
+            })
+            try:
+                from execution.distrokid_store import upsert_release
+                upsert_release(d.get("artist_id", ""), d.get("song_id", ""), {
+                    "song_title": d.get("title", ""),
+                    "release_date": d.get("release_date", ""),
+                    "isrc": d.get("isrc"),
+                    "upc": d.get("upc"),
+                    "streaming_url": d.get("streaming_url"),
+                    "album_url": d.get("album_url"),
+                    "pre_save_link": d.get("presave_url"),
+                    "status": "upcoming",
+                })
+            except Exception as e:
+                st.warning(f"Could not save to DistroKid release records: {e}")
+            _save_draft(d, 5)
             _go(5)
 
 
-# ── STEP 5: VALIDATE ─────────────────────────────────────────────────────────
+# ── STEP 5: ANALYSIS ──────────────────────────────────────────────────────────
 
-def _step_validate():
+def _step_analysis():
     d = st.session_state.wizard_data
-    st.markdown("### Step 6 — Validate")
+    st.markdown("### Step 6 — Creative Analysis")
     st.caption(f"**{d.get('artist_name', '')}** · **{d.get('title', '')}** · {d.get('album_title', '')}")
 
     brand = load_artist(d.get("artist_id", ""))
     artist_id = d.get("artist_id", "")
+
+    analysis = d.get("audio_analysis") or {}
+    hooks = analysis.get("hook_timestamps") or []
+    duration = d.get("duration_seconds") or analysis.get("duration_seconds")
+    mode = d.get("mode", "blitz")
+
+    from execution.audio_analysis import suggest_deliverables
+    suggestions = suggest_deliverables(len(hooks), duration, mode)
+
+    st.markdown("<div class='mw-section-label'>Creative Analysis Complete</div>", unsafe_allow_html=True)
+    st.caption("Creative analysis estimate — based on your Creative Master's waveform. Edit anything in earlier steps and these numbers update.")
+
+    dur_val = duration or 0
+    m1, m2, m3, m4 = st.columns(4)
+    m1.metric("Song Length", f"{dur_val // 60}:{dur_val % 60:02d}")
+    m2.metric("Detected Hooks", suggestions["detected_hooks"])
+    m3.metric("Mood", ", ".join(analysis.get("mood_tags") or d.get("mood") or ["—"]))
+    m4.metric("Energy", (analysis.get("energy_level") or "—").title())
+
+    st.markdown("<div style='margin-top:1rem;'></div>", unsafe_allow_html=True)
+    d1, d2, d3, d4, d5, d6 = st.columns(6)
+    d1.metric("Shorts", suggestions["suggested_shorts"])
+    d2.metric("Reels", suggestions["suggested_reels"])
+    d3.metric("Quote Cards", suggestions["suggested_quote_cards"])
+    d4.metric("Blog Articles", suggestions["suggested_blog_articles"])
+    d5.metric("Devotionals", suggestions["suggested_devotionals"])
+    d6.metric("Video Concepts", suggestions["suggested_video_concepts"])
+
+    render_html(f"""
+    <div class="mw-card" style="padding:1rem 1.5rem; margin-top:0.75rem; border-left:3px solid #22C55E;">
+    <div style="font-size:12px; color:#8A8480;">Estimated Campaign Assets</div>
+    <div style="font-size:28px; font-weight:800; color:#F0EDE8;">{suggestions['estimated_total_assets']}</div>
+    </div>
+    """)
+
+    if analysis.get("degraded") and analysis.get("degraded_reason"):
+        st.info(analysis["degraded_reason"])
+
+    st.divider()
 
     # Brand Vault + Distribution checks
     try:
@@ -607,6 +727,7 @@ def _step_validate():
         ("Themes",                      bool(d.get("themes")),                        True),
         ("Brand Brain found",           brand is not None,                            False),
         ("Audio file uploaded",         bool(d.get("audio_file_path")),              False),
+        ("Lyrics added",                bool(d.get("lyrics_text")),                   False),
         ("Album cover uploaded",        bool(d.get("artwork_file_path")),             False),
         ("Creative DNA references",     bool(d.get("creative_dna_reference_paths")),  False),
         ("Brand Vault — visual assets", _has_visuals,                                 False),
@@ -616,7 +737,6 @@ def _step_validate():
     errors = [(label, req) for label, ok, req in checks if not ok and req]
     warnings = [(label, req) for label, ok, req in checks if not ok and not req]
 
-    # Specific visual warning
     if not _has_visuals:
         st.info(
             "MusicWorks can build this campaign, but **visual generation will be weaker** until "
@@ -665,15 +785,15 @@ def _step_validate():
                 reasons.append("confirm Audio QC")
             if reasons:
                 st.caption(f"To unlock: {' · '.join(reasons)}")
-        if st.button("Save & Proceed to Build →", type="primary", disabled=not can_proceed):
+        if st.button("Launch Media Factory™ →", type="primary", disabled=not can_proceed):
             if _save_song_json(d, brand, theology_ok, audio_ok):
                 _clear_draft()
                 _go(6)
 
 
-# ── STEP 6: BUILD CAMPAIGN ────────────────────────────────────────────────────
+# ── STEP 6: LAUNCH ────────────────────────────────────────────────────────────
 
-def _step_build():
+def _step_launch():
     d = st.session_state.wizard_data
 
     if st.session_state.get("wizard_campaign_id"):
@@ -685,7 +805,7 @@ def _step_build():
     mode_internal = d.get("mode", "blitz")
     mode_label = _MODE_TO_LABEL.get(mode_internal, "Full Launch")
 
-    st.markdown("### Step 7 — Build Campaign")
+    st.markdown("### Step 7 — Launch Media Factory™")
 
     render_html(f"""
     <div class="mw-card" style="padding:1.5rem; border-left:3px solid #FF6B2B; margin-bottom:1rem;">
@@ -706,8 +826,8 @@ def _step_build():
 
     song_file = d.get("song_file", "")
     if not song_file or not Path(song_file).exists():
-        st.error("Song file not found. Please go back and complete validation.")
-        if st.button("← Back to Validation"):
+        st.error("Song file not found. Please go back and complete the Analysis step.")
+        if st.button("← Back to Analysis"):
             _go(5)
         return
 
@@ -722,7 +842,7 @@ def _step_build():
     if not has_key:
         st.warning("No Anthropic API key found — running in Mock Mode. Assets will use sample data.")
 
-    # Mock mode lives in an expander — build button is the hero action
+    # Mock mode lives in an expander — launch button is the hero action
     with st.expander("⚙ Advanced options", expanded=False):
         st.checkbox(
             "Use Mock Mode (sample data — no API calls)",
@@ -738,7 +858,7 @@ def _step_build():
         if st.button("← Back"):
             _go(5)
     with col2:
-        if st.button("🚀  BUILD CAMPAIGN", type="primary", use_container_width=True):
+        if st.button("🚀  LAUNCH MEDIA FACTORY", type="primary", use_container_width=True):
             campaign_id = _run_campaign_build(d, st.session_state.wizard_mock_override)
             if campaign_id:
                 st.session_state.wizard_campaign_id = campaign_id
@@ -751,6 +871,7 @@ def _save_song_json(d: dict, brand, theology_ok: bool, audio_ok: bool) -> bool:
     """Save the song JSON and store the path in wizard_data. Returns True on success."""
     try:
         artist_id = d.get("artist_id", "")
+        analysis = d.get("audio_analysis") or {}
         song_data = {
             "song_id": d.get("song_id", f"{artist_id}-{uuid.uuid4().hex[:6]}"),
             "artist_id": artist_id,
@@ -790,6 +911,14 @@ def _save_song_json(d: dict, brand, theology_ok: bool, audio_ok: bool) -> bool:
             "target_geography": brand.audience.get("geography_priority", []) if brand else [],
             "target_audience_age": "18-45",
             "target_faith_background": "Christian — all denominations",
+            "isrc": d.get("isrc"),
+            "lyrics_text": d.get("lyrics_text"),
+            "tempo_estimate": analysis.get("tempo_bpm"),
+            "mood_estimate": analysis.get("mood_tags", []),
+            "energy_level_estimate": analysis.get("energy_level"),
+            "hook_timestamps": analysis.get("hook_timestamps", []),
+            "structure_segments": analysis.get("structure_segments", []),
+            "audio_analysis_source": analysis.get("source"),
             "_internal_notes": d.get("internal_notes", ""),
         }
         song_data = {k: v for k, v in song_data.items() if v is not None}
@@ -805,36 +934,31 @@ def _save_song_json(d: dict, brand, theology_ok: bool, audio_ok: bool) -> bool:
 
 
 def _run_campaign_build(d: dict, mock_mode: bool) -> str | None:
-    """Run the full campaign build with animated progress. Returns campaign_id or None."""
+    """Run the full campaign build with friendly, non-technical progress. Returns campaign_id or None."""
     from contracts.models import SongInput
 
-    with st.status("Building your campaign...", expanded=True) as status:
+    with st.status("Launching your Media Factory...", expanded=True) as status:
         try:
-            status.write("⏳ Loading Brand Brain...")
+            status.write("🧠 Loading Artist Brain...")
             from brand_brain.brain_loader import load_context
             brand_context = "" if mock_mode else load_context(d.get("artist_id", ""))
             if mock_mode:
                 time.sleep(0.5)
-            status.write("✓ Brand Brain loaded")
+            status.write("✓ Artist Brain loaded")
 
-            status.write("⏳ Loading Creative DNA...")
-            if mock_mode:
-                time.sleep(0.4)
-            status.write("✓ Creative DNA ready")
-
-            status.write("⏳ Reading Song...")
+            status.write("🎵 Reading Song...")
             song_data = json.loads(Path(d["song_file"]).read_text(encoding="utf-8"))
             song = SongInput.from_dict(song_data)
             if mock_mode:
                 time.sleep(0.4)
             status.write(f"✓ Song loaded: {song.title}")
 
-            status.write("⏳ Reading Lyrics & Scripture...")
+            status.write("📖 Analyzing Lyrics...")
             if mock_mode:
                 time.sleep(0.4)
             status.write(f"✓ Scripture: {song.scripture_primary}")
 
-            status.write("⏳ Building Campaign Plan...")
+            status.write("🗺️ Building Campaign...")
             mode = d.get("mode", "blitz")
             if mock_mode:
                 from agents.mock_data import get_campaign_plan
@@ -845,13 +969,22 @@ def _run_campaign_build(d: dict, mock_mode: bool) -> str | None:
                 plan = campaign_agent.run(song, mode, brand_context=brand_context)
             status.write(f"✓ Campaign plan ready: {plan.campaign_name}")
 
-            status.write("⏳ Generating Assets...")
+            status.write("📅 Planning Media Calendar...")
+            if mock_mode:
+                time.sleep(0.3)
+            status.write(f"✓ {len(plan.content_calendar)} calendar entries planned")
+
+            status.write("📋 Creating Production Queue...")
             from execution.asset_library import AssetLibrary
             from execution.orchestrator import RenderOrchestrator
 
             library = AssetLibrary()
             orchestrator = RenderOrchestrator(library, mock_mode=mock_mode)
+            if mock_mode:
+                time.sleep(0.3)
+            status.write("✓ Production queue ready")
 
+            status.write("🎨 Generating Assets...")
             log_lines = []
             def _printer(msg):
                 log_lines.append(msg)
@@ -860,6 +993,8 @@ def _run_campaign_build(d: dict, mock_mode: bool) -> str | None:
 
             assets = orchestrator.run_campaign(song, plan, printer=_printer)
             status.write(f"✓ {len(assets)} assets generated")
+
+            status.write("✅ Preparing Review...")
             status.update(label="✅ Campaign Ready!", state="complete")
             return plan.campaign_id
 
@@ -908,7 +1043,7 @@ def _render_campaign_ready(d: dict):
 
 def render():
     _init()
-    page_header("New Project Wizard", "One song. One campaign. Complete.", "🎵")
+    page_header("Media Campaign Wizard", "One song. One campaign. Complete.", "🎵")
     _progress_header()
 
     step = st.session_state.wizard_step
@@ -934,13 +1069,13 @@ def render():
             st.divider()
 
     dispatch = [
-        _step_artist,    # 0
-        _step_song,      # 1
-        _step_details,   # 2
-        _step_scripture, # 3
-        _step_assets,    # 4
-        _step_validate,  # 5
-        _step_build,     # 6
+        _step_artist,           # 0
+        _step_creative_master,  # 1
+        _step_details_lyrics,   # 2
+        _step_artwork,          # 3
+        _step_release_info,     # 4
+        _step_analysis,         # 5
+        _step_launch,           # 6
     ]
 
     if 0 <= step < len(dispatch):

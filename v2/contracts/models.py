@@ -37,6 +37,13 @@ class SongInput:
     target_geography: list = field(default_factory=list)
     target_audience_age: str = "18-45"
     target_faith_background: str = "Christian — all denominations"
+    lyrics_text: Optional[str] = None
+    tempo_estimate: Optional[int] = None
+    mood_estimate: list = field(default_factory=list)
+    energy_level_estimate: Optional[str] = None
+    hook_timestamps: list = field(default_factory=list)
+    structure_segments: list = field(default_factory=list)
+    audio_analysis_source: Optional[str] = None
 
     def validate(self):
         """Hard gate: theology and audio QC must both be approved."""

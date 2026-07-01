@@ -30,6 +30,7 @@ def _action_card(variant: str, icon: str, title: str, desc: str) -> str:
         "release":  "#9B89D4",
         "continue": "#93C5FD",
         "artists":  "#6EC894",
+        "library":  "#F59E0B",
         "results":  "#D4A853",
     }.get(variant, "#8A8480")
     return (
@@ -132,44 +133,53 @@ def render():
         f'</div>'
     )
 
-    # ── 4 Action Cards (2 × 2) ───────────────────────────────────────────────
+    # ── Hero: Launch a Media Campaign (primary CTA) ───────────────────────────
+    render_html(_action_card(
+        "release", "🚀", "Launch a Media Campaign",
+        "Upload your Creative Master and MusicWorks builds the entire media "
+        "campaign around it — videos, social posts, articles, and more."
+    ))
+    if st.button("🚀  Launch a Media Campaign", key="home_launch", type="primary", use_container_width=True):
+        _new_release()
+
+    st.markdown("<div style='height:1.5rem;'></div>", unsafe_allow_html=True)
+
+    # ── 4 secondary action cards ──────────────────────────────────────────────
     last_campaign = _get_last_campaign()
 
-    col1, col2 = st.columns(2, gap="medium")
+    c1, c2, c3, c4 = st.columns(4, gap="medium")
 
-    with col1:
+    with c1:
         render_html(_action_card(
-            "release", "🚀", "Release a Song",
-            "Start a new release. We'll create videos, social posts, and articles for you automatically."
+            "continue", "📂", "Continue Current Campaign",
+            "Pick up where you left off on an active campaign."
         ))
-        if st.button("Start New Release →", key="home_release", type="primary", use_container_width=True):
-            _new_release()
+        if last_campaign:
+            if st.button("Continue →", key="home_continue", use_container_width=True):
+                navigate_to("campaigns")
+        else:
+            st.button("No Active Campaigns", key="home_continue", use_container_width=True, disabled=True)
 
-        st.markdown("<div style='height:1.25rem;'></div>", unsafe_allow_html=True)
-
+    with c2:
         render_html(_action_card(
             "artists", "👥", "Manage Artists",
-            "View and update your artist profiles, brand guidelines, and biography."
+            "View and update artist profiles, brand guidelines, and biography."
         ))
         if st.button("View Artists →", key="home_artists", use_container_width=True):
             navigate_to("artists")
 
-    with col2:
+    with c3:
         render_html(_action_card(
-            "continue", "🎵", "Continue Release",
-            "Pick up where you left off — review assets and get closer to launch."
+            "library", "🗂", "Media Library",
+            "Browse every approved asset — searchable, downloadable, stored forever."
         ))
-        if last_campaign:
-            if st.button("Continue Release →", key="home_continue", use_container_width=True):
-                navigate_to("approval")
-        else:
-            st.button("No Active Releases", key="home_continue", use_container_width=True, disabled=True)
+        if st.button("Open Library →", key="home_library", use_container_width=True):
+            navigate_to("media_library")
 
-        st.markdown("<div style='height:1.25rem;'></div>", unsafe_allow_html=True)
-
+    with c4:
         render_html(_action_card(
-            "results", "📊", "View Results",
-            "See your performance analytics and how your music is reaching people."
+            "results", "📈", "Results & Analytics",
+            "See how your music and media are reaching people."
         ))
         if st.button("See Analytics →", key="home_results", use_container_width=True):
             navigate_to("analytics")

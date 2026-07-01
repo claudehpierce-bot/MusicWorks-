@@ -20,12 +20,11 @@ def render_html(html: str):
 # ── Navigation ────────────────────────────────────────────────────────────────
 
 _CREATOR_NAV = [
-    ("🏠", "Home",           "home"),
-    ("🚀", "Release a Song", "wizard"),
-    ("🎵", "My Releases",    "campaigns"),
-    ("👥", "Artists",        "artists"),
-    ("📚", "Media Library",  "media_library"),
-    ("📊", "Results",        "analytics"),
+    ("🏠", "Home",             "home"),
+    ("🚀", "Launch Campaign",  "wizard"),
+    ("👥", "Artists",          "artists"),
+    ("📚", "Media Library",    "media_library"),
+    ("📊", "Results",          "analytics"),
 ]
 
 _STUDIO_NAV = [
