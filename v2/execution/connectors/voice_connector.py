@@ -1,31 +1,33 @@
-"""MusicWorks™ V4.1 — Voice Connector: routes audio/avatar jobs to ElevenLabs, Hedra."""
+"""MusicWorks™ V5.4 — Voice Connector: routes pure audio narration to ElevenLabs.
+
+Talking-avatar video (Hedra) is owned by artist_presence_connector.py — this
+connector is audio-only (voice narration, spoken scripture, devotional audio).
+"""
 from .base_connector import BaseConnector, ConnectorResult
 
-VOICE_JOB_TYPES = ["behind_scenes"]
+VOICE_JOB_TYPES: list[str] = []
 
 
 class VoiceConnector(BaseConnector):
     name             = "Voice Connector"
-    description      = "Routes talking-avatar jobs to Hedra or HeyGen; voice to ElevenLabs"
+    description      = "Routes voice narration and spoken-word audio to ElevenLabs"
     icon             = "🔊"
-    task_category    = "talking_avatar"
+    task_category    = "voice"
     handles          = VOICE_JOB_TYPES
-    providers        = ["hedra", "heygen", "elevenlabs"]
+    providers        = ["elevenlabs"]
     future_providers = ["synthesia"]
 
     def _execute(self, job: dict, provider: str, brand_context: str) -> ConnectorResult:
         from execution.workers import get_worker
-        # Hedra preferred for avatar video; ElevenLabs for audio-only
-        worker_key = "hedra" if provider == "hedra" else "elevenlabs"
-        worker = get_worker(worker_key)
+        worker = get_worker("elevenlabs")
         if not worker:
-            return ConnectorResult(success=False, error=f"{worker_key} worker not found")
+            return ConnectorResult(success=False, error="ElevenLabs worker not found")
         result = worker.generate(job, brand_context=brand_context)
         return ConnectorResult(
             success=result.success,
             output_text=result.output_text,
             output_files=result.output_files,
-            worker_used=worker_key,
+            worker_used="elevenlabs",
             prompt_used=result.prompt_used,
             mock=result.mock,
             error=result.error,

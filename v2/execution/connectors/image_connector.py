@@ -1,7 +1,7 @@
 """MusicWorks™ V4.1 — Image Connector: routes static design jobs to Canva, Adobe (future)."""
 from .base_connector import BaseConnector, ConnectorResult
 
-IMAGE_JOB_TYPES = ["quote_card", "story_slides", "thumbnail_set", "countdown"]
+IMAGE_JOB_TYPES = ["quote_card", "story_slides", "thumbnail_set"]
 
 
 class ImageConnector(BaseConnector):

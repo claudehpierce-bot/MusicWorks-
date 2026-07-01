@@ -1,16 +1,21 @@
-"""MusicWorks™ V4.1 — Video Connector: routes video jobs to Veo, Runway, Pika (future)."""
+"""MusicWorks™ V5.4 — Cinematic Video Connector (Hero Worker #1).
+
+Long-form storytelling: official music videos, trailers, visualizers,
+cinematic scenes, worship backgrounds. Routes to Veo, Runway, Pika (future).
+Short-form artist-presence content lives in artist_presence_connector.py.
+"""
 from .base_connector import BaseConnector, ConnectorResult
 
 VIDEO_JOB_TYPES = [
-    "instagram_reel", "tiktok", "youtube_short", "facebook_reel",
-    "x_video", "rumble_video", "spotify_canvas", "reaction",
+    "music_video", "trailer", "lyric_visualizer", "cinematic_scenes",
+    "worship_background", "youtube_video", "rumble_video", "spotify_canvas",
 ]
 
 
 class VideoConnector(BaseConnector):
-    name             = "Video Connector"
-    description      = "Routes video generation to Veo or HeyGen"
-    icon             = "🎥"
+    name             = "Cinematic Video Connector"
+    description      = "Routes long-form cinematic video to Veo or HeyGen"
+    icon             = "🎬"
     task_category    = "video"
     handles          = VIDEO_JOB_TYPES
     providers        = ["veo", "heygen"]

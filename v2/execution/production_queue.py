@@ -11,24 +11,40 @@ JOBS_DIR  = DATA_DIR / "jobs"
 
 JOB_TYPES = [
     # (key, label, icon, default_worker, platform)
-    ("instagram_reel",  "Instagram Reel",       "📱", "veo",        "instagram"),
-    ("tiktok",          "TikTok Video",          "🎵", "veo",        "tiktok"),
-    ("youtube_short",   "YouTube Short",         "▶️", "veo",        "youtube"),
-    ("facebook_reel",   "Facebook Reel",         "👥", "veo",        "facebook"),
-    ("x_video",         "X Video",               "✖️", "veo",        "x"),
-    ("rumble_video",    "Rumble Video",           "🔴", "veo",        "rumble"),
-    ("spotify_canvas",  "Spotify Canvas",        "🎧", "veo",        "spotify"),
+    # ── Hero Worker #1: Cinematic Video (Veo) — long-form storytelling ─────────
+    ("music_video",         "Official Music Video", "🎬", "veo",        "youtube"),
+    ("trailer",             "Trailer",               "🎞️", "veo",        "youtube"),
+    ("lyric_visualizer",    "Lyric Visualizer",      "🌊", "veo",        "youtube"),
+    ("cinematic_scenes",    "Cinematic Scenes",      "🎥", "veo",        "youtube"),
+    ("worship_background",  "Worship Background",    "🕊️", "veo",        "youtube"),
+    ("youtube_video",       "YouTube Video",         "▶️", "veo",        "youtube"),
+    ("rumble_video",        "Rumble Video",          "🔴", "veo",        "rumble"),
+    ("spotify_canvas",      "Spotify Canvas",        "🎧", "veo",        "spotify"),
+
+    # ── Hero Worker #2: Artist Presence (Hedra) — human connection ─────────────
+    ("instagram_reel",  "Instagram Reel",       "📱", "hedra",      "instagram"),
+    ("tiktok",          "TikTok Video",          "🎵", "hedra",      "tiktok"),
+    ("youtube_short",   "YouTube Short",         "▶️", "hedra",      "youtube"),
+    ("facebook_reel",   "Facebook Reel",         "👥", "hedra",      "facebook"),
+    ("x_video",         "X Video",               "✖️", "hedra",      "x"),
+    ("reaction",        "Reaction Content",      "💫", "hedra",      "tiktok"),
+    ("behind_scenes",   "Behind the Scenes",     "🎬", "hedra",      "instagram"),
+    ("countdown",        "Countdown Video",       "⏱️", "hedra",      "instagram"),
+    ("artist_welcome",   "Artist Welcome",        "👋", "hedra",      "instagram"),
+    ("devotional",        "Devotional",             "🙏", "hedra",      "instagram"),
+    ("scripture_reflection", "Scripture Reflection", "📖", "hedra",   "instagram"),
+
+    # ── Text (Claude) ───────────────────────────────────────────────────────────
     ("blog",            "Blog Post",             "✍️", "claude",     "website"),
     ("email",           "Email Newsletter",      "📧", "claude",     "email"),
     ("press_release",   "Press Release",         "📰", "claude",     "press"),
     ("church_outreach", "Church Outreach",       "⛪", "claude",     "email"),
+    ("post_launch",     "Post-Launch Post",      "🚀", "claude",     "all"),
+
+    # ── Graphics (Canva / Leonardo) ─────────────────────────────────────────────
     ("quote_card",      "Quote Card",            "💬", "canva",      "all"),
     ("story_slides",    "Story Slides",          "📲", "canva",      "instagram"),
     ("thumbnail_set",   "Thumbnail Set",         "🖼️", "canva",      "youtube"),
-    ("behind_scenes",   "Behind the Scenes",     "🎬", "hedra",      "instagram"),
-    ("countdown",       "Countdown Asset",       "⏱️", "canva",      "instagram"),
-    ("reaction",        "Reaction Content",      "💫", "veo",        "tiktok"),
-    ("post_launch",     "Post-Launch Post",      "🚀", "claude",     "all"),
 ]
 
 JOB_STATUSES = [

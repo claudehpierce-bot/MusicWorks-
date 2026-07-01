@@ -2,7 +2,7 @@
 from .base_connector import BaseConnector, ConnectorResult
 
 WRITING_JOB_TYPES = [
-    "blog", "email", "press_release", "church_outreach", "post_launch", "reaction",
+    "blog", "email", "press_release", "church_outreach", "post_launch",
 ]
 
 

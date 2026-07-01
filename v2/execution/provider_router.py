@@ -34,29 +34,35 @@ class RoutingEntry:
 
 ROUTING_TABLE: dict[str, RoutingEntry] = {e.task: e for e in [
     RoutingEntry("writing",          "Writing",          "✍️",  "claude",       ["perplexity"],
-                 ["blog", "email", "press_release", "church_outreach", "post_launch", "reaction"],
+                 ["blog", "email", "press_release", "church_outreach", "post_launch"],
                  "Long-form and short-form text content"),
 
     RoutingEntry("research",         "Research",         "🔍", "perplexity",   ["claude"],
                  [],
                  "Gospel context, trends, fact-checking, artist research"),
 
-    RoutingEntry("video",            "Music Video",      "🎥", "veo",          ["heygen"],
-                 ["instagram_reel", "tiktok", "youtube_short", "facebook_reel",
-                  "x_video", "rumble_video", "spotify_canvas"],
-                 "AI-generated cinematic video for all social platforms"),
+    # Hero Worker #1 — Cinematic Video (Veo): long-form storytelling.
+    RoutingEntry("video",            "Cinematic Video",  "🎬", "veo",          ["heygen"],
+                 ["music_video", "trailer", "lyric_visualizer", "cinematic_scenes",
+                  "worship_background", "youtube_video", "rumble_video", "spotify_canvas"],
+                 "Long-form storytelling: official music videos, trailers, visualizers, "
+                 "cinematic scenes, worship backgrounds"),
 
-    RoutingEntry("talking_avatar",   "Talking Avatar",   "🎙️", "hedra",        ["heygen"],
-                 ["behind_scenes"],
-                 "AI presenter / devotional / talking-head content"),
+    # Hero Worker #2 — Artist Presence (Hedra): human connection.
+    RoutingEntry("talking_avatar",   "Artist Presence",  "🎙️", "hedra",        ["heygen"],
+                 ["instagram_reel", "tiktok", "youtube_short", "facebook_reel", "x_video",
+                  "reaction", "behind_scenes", "countdown", "artist_welcome",
+                  "devotional", "scripture_reflection"],
+                 "Human connection: shorts, reels, TikTok, countdowns, artist intros, "
+                 "devotionals, scripture reflections"),
 
     RoutingEntry("hero_artwork",     "Hero Artwork",     "🎨", "leonardo",     ["google_imagen"],
                  ["thumbnail_set"],
                  "Album covers, artist portraits, campaign hero images"),
 
     RoutingEntry("graphics",         "Graphics",         "🖼️",  "canva",        ["leonardo"],
-                 ["quote_card", "story_slides", "countdown"],
-                 "Branded quote cards, story slides, countdown graphics"),
+                 ["quote_card", "story_slides"],
+                 "Branded quote cards and story slides"),
 
     RoutingEntry("voice",            "Voice / Audio",    "🔊", "elevenlabs",   [],
                  [],

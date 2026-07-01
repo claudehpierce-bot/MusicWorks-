@@ -6,6 +6,7 @@ no changes to jobs, workers, or UI.
 """
 from .base_connector import BaseConnector, ConnectorResult
 from .video_connector import VideoConnector
+from .artist_presence_connector import ArtistPresenceConnector
 from .image_connector import ImageConnector
 from .voice_connector import VoiceConnector
 from .writing_connector import WritingConnector
@@ -16,6 +17,7 @@ from .analytics_connector import AnalyticsConnector
 ALL_CONNECTORS: list[BaseConnector] = [
     WritingConnector(),
     VideoConnector(),
+    ArtistPresenceConnector(),
     ImageConnector(),
     VoiceConnector(),
     PublishingConnector(),
