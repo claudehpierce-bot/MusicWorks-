@@ -40,7 +40,7 @@ _STUDIO_NAV = [
     ("🚀", "Publishing",       "publishing"),
     ("📊", "Analytics",        "analytics"),
     ("🧠", "Brand Brain",      "brand_brain"),
-    ("🧰", "Media Toolbox",    "connections"),
+    ("🔌", "Connections",      "connections"),
     ("🛡️", "Compliance",       "compliance"),
     ("⚙",  "Settings",         "settings"),
 ]

@@ -92,12 +92,17 @@ def get_all_statuses() -> list[dict]:
     return [get_connection_status(p.key) for p in PROVIDERS]
 
 
+_REAL_TESTS = {}  # populated below, key -> test function
+
+
 def test_connection(key: str) -> tuple[bool, str]:
     """Run a live test for the provider. Returns (success, message)."""
-    if key == "claude":
-        return _test_claude()
+    tester = _REAL_TESTS.get(key)
+    if tester:
+        return tester()
     # All other providers: check if key is present (real live tests are not
-    # yet implemented — only Claude and Veo have working API calls today).
+    # yet implemented for them — only Claude, Google AI, HeyGen, and Veo
+    # have working live checks today).
     status = get_connection_status(key)
     if status["has_key"]:
         msg = "API key present (live test not yet implemented for this provider)"
@@ -109,6 +114,11 @@ def test_connection(key: str) -> tuple[bool, str]:
 
 
 def _test_claude() -> tuple[bool, str]:
+    status = get_connection_status("claude")
+    if not status["has_key"]:
+        msg = "Not configured — set ANTHROPIC_API_KEY to connect"
+        record_test("claude", False, msg)
+        return False, msg
     try:
         import anthropic
         client = anthropic.Anthropic()
@@ -117,6 +127,62 @@ def _test_claude() -> tuple[bool, str]:
         record_test("claude", True, msg)
         return True, msg
     except Exception as e:
-        msg = f"Error: {str(e)[:100]}"
+        msg = f"Configuration error: {str(e)[:100]}"
         record_test("claude", False, msg)
         return False, msg
+
+
+def _test_google_imagen() -> tuple[bool, str]:
+    status = get_connection_status("google_imagen")
+    if not status["has_key"]:
+        msg = "Not configured — set GOOGLE_AI_API_KEY to connect"
+        record_test("google_imagen", False, msg)
+        return False, msg
+    try:
+        from google import genai
+        client = genai.Client(api_key=_get_env("GOOGLE_AI_API_KEY"))
+        list(client.models.list())
+        msg = "Connected — Google AI API responding"
+        record_test("google_imagen", True, msg)
+        return True, msg
+    except Exception as e:
+        msg = f"Configuration error: {str(e)[:100]}"
+        record_test("google_imagen", False, msg)
+        return False, msg
+
+
+def _test_heygen() -> tuple[bool, str]:
+    status = get_connection_status("heygen")
+    if not status["has_key"]:
+        msg = "Not configured — set HEYGEN_API_KEY to connect"
+        record_test("heygen", False, msg)
+        return False, msg
+    try:
+        import requests
+        resp = requests.get(
+            "https://api.heygen.com/v2/user/remaining_quota",
+            headers={"X-Api-Key": _get_env("HEYGEN_API_KEY")},
+            timeout=10,
+        )
+        if resp.status_code == 200:
+            msg = "Connected — HeyGen API responding"
+            record_test("heygen", True, msg)
+            return True, msg
+        if resp.status_code in (401, 403):
+            msg = f"Configuration error: HeyGen rejected the API key (HTTP {resp.status_code})"
+            record_test("heygen", False, msg)
+            return False, msg
+        msg = f"Configuration error: HeyGen returned HTTP {resp.status_code}"
+        record_test("heygen", False, msg)
+        return False, msg
+    except Exception as e:
+        msg = f"Configuration error: {str(e)[:100]}"
+        record_test("heygen", False, msg)
+        return False, msg
+
+
+_REAL_TESTS.update({
+    "claude": _test_claude,
+    "google_imagen": _test_google_imagen,
+    "heygen": _test_heygen,
+})

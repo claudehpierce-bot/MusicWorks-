@@ -17,7 +17,7 @@ from execution.provider_router import (
 
 
 def render():
-    page_header("Media Toolbox", "Every provider. Every subscription. One intelligent router.", "🧰")
+    page_header("Connections", "Media Toolbox — every provider, every subscription, one intelligent router.", "🔌")
 
     # ── Security note ─────────────────────────────────────────────────────────
     render_html("""
@@ -84,13 +84,24 @@ def _render_provider_card(col, provider):
     from execution.connections_store import record_test, test_connection, get_connection_status
 
     key = provider.key
+    test_status = get_connection_status(key)
 
-    # Connection status
+    # Connection status — three states for API-key providers:
+    #   🟢 Connected            — key present, last test succeeded (or never tested)
+    #   🟡 Configuration Error  — key present, but the last live test failed
+    #   🔴 Not Connected        — no key configured at all
     if provider.requires_api_key:
-        connected = is_api_key_set(key)
-        status_dot   = "🟢" if connected else "⚫"
-        status_label = "Connected" if connected else "Not Connected"
-        status_color = "#22C55E" if connected else "#6A6460"
+        has_key = test_status["has_key"]
+        last_status = test_status.get("last_status", "")
+        if not has_key:
+            connected = False
+            status_dot, status_label, status_color = "🔴", "Not Connected", "#EF4444"
+        elif last_status == "error":
+            connected = True
+            status_dot, status_label, status_color = "🟡", "Configuration Error", "#F59E0B"
+        else:
+            connected = True
+            status_dot, status_label, status_color = "🟢", "Connected", "#22C55E"
     else:
         connected = is_subscription_active(key)
         status_dot   = "🟢" if connected else "🟡"
@@ -106,7 +117,6 @@ def _render_provider_card(col, provider):
     days  = days_until_renewal(key)
 
     # Last tested
-    test_status = get_connection_status(key)
     last_tested = test_status.get("last_tested", "")
     if last_tested:
         last_tested_label = f"Last tested: {last_tested[:16].replace('T', ' ')} UTC"

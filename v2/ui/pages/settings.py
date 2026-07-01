@@ -5,11 +5,39 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 import streamlit as st
-from ui.components import page_header, render_html
+from ui.components import page_header, render_html, navigate_to
 
 
 def render():
     page_header("Settings", "Configure your MusicWorks™ environment.", "⚙")
+
+    # ── Provider Connections ─────────────────────────────────────────────────
+    st.markdown("<div class='mw-section-label'>Connections</div>", unsafe_allow_html=True)
+    try:
+        from execution.provider_registry import PROVIDERS
+        from execution.provider_router import is_available
+        connected_n = sum(1 for p in PROVIDERS if p.requires_api_key and is_available(p.key))
+        total_n = len(PROVIDERS)
+    except Exception:
+        connected_n, total_n = 0, 0
+
+    render_html(f"""
+    <div class="mw-card" style="padding:1rem 1.5rem; border-left:3px solid #9B89D4; margin-bottom:0.75rem;">
+        <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:0.75rem;">
+            <div>
+                <div style="font-size:14px; font-weight:700; color:#F0EDE8;">🔌 Provider Connections</div>
+                <div style="font-size:12px; color:#8A8480; margin-top:2px;">
+                    {connected_n} of {total_n} providers connected — manage API keys, test connections,
+                    and see live status for every AI provider MusicWorks supports.
+                </div>
+            </div>
+        </div>
+    </div>
+    """)
+    if st.button("🔌  Open Connections →", key="settings_open_connections", type="primary"):
+        navigate_to("connections")
+
+    st.markdown("<div style='margin-top:1.5rem;'></div>", unsafe_allow_html=True)
 
     try:
         from config import ANTHROPIC_API_KEY, MOCK_MODE, CLAUDE_MODEL, DB_PATH
