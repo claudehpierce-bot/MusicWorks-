@@ -242,11 +242,336 @@ def _render_asset_card(asset: dict, lib: AssetLibrary):
                 st.caption(f"Reason: {asset['founder_notes']}")
 
 
+# ── V5 one-at-a-time review ───────────────────────────────────────────────────
+
+def _v5_review(artist_id: str, all_jobs: list, gen_dir: Path):
+    """V5 Founder Experience: single-asset review with Previous / Next."""
+    from execution.production_queue import update_job_status, PHASE_LABELS
+    from ui.components import render_html
+
+    FILTER_OPTIONS = {
+        "all":       ("All Assets",  lambda j: j.get("status") in ("review", "approved")),
+        "review":    ("Review Now",  lambda j: j.get("status") == "review"),
+        "approved":  ("Approved",    lambda j: j.get("status") == "approved"),
+        "published": ("Published",   lambda j: j.get("status") == "published"),
+    }
+
+    active_filter = st.session_state.get("v5_filter", "all")
+
+    # Count per filter
+    counts = {}
+    for key, (label, pred) in FILTER_OPTIONS.items():
+        counts[key] = sum(1 for j in all_jobs if pred(j))
+
+    filtered = [j for j in all_jobs if FILTER_OPTIONS[active_filter][1](j)]
+    total    = len(filtered)
+
+    if total == 0:
+        review_count = counts.get("review", 0)
+        render_html(f"""
+        <div class="mw-asset-preview" style="text-align:center; padding:3rem; color:#8A8480;">
+            <div style="font-size:48px; margin-bottom:1rem;">{'✅' if review_count == 0 else '📭'}</div>
+            <div style="font-size:18px; color:#F0EDE8; margin-bottom:0.5rem;">
+                {'All assets reviewed!' if review_count == 0 else 'Nothing in this filter'}
+            </div>
+            <div style="font-size:13px;">
+                {'Ready to head to Publishing.' if review_count == 0 else 'Switch filter to see other assets.'}
+            </div>
+        </div>
+        """)
+        if review_count == 0 and counts.get("approved", 0) > 0:
+            if st.button("🚀 Go to Publishing", type="primary", key="v5_goto_pub"):
+                navigate_to("publishing")
+        return
+
+    if "v5_review_idx" not in st.session_state:
+        st.session_state.v5_review_idx = 0
+    # Find first "review" status job if filter is "all"
+    if active_filter == "all" and st.session_state.get("_v5_auto_focus", True):
+        first_review = next((i for i, j in enumerate(filtered) if j.get("status") == "review"), None)
+        if first_review is not None:
+            st.session_state.v5_review_idx = first_review
+        st.session_state._v5_auto_focus = False
+
+    idx = max(0, min(st.session_state.v5_review_idx, total - 1))
+    job = filtered[idx]
+
+    # ── Layout: filter column + asset column ──────────────────────────────────
+    left, right = st.columns([2, 5], gap="medium")
+
+    with left:
+        # Filter tabs
+        filter_html = '<div class="mw-filter-list">'
+        for key, (label, pred) in FILTER_OPTIONS.items():
+            active_cls = "mw-filter-item-active" if key == active_filter else ""
+            cnt        = counts[key]
+            filter_html += (
+                f'<div class="mw-filter-item {active_cls}">'
+                f'<span>{label}</span>'
+                f'<span class="mw-filter-count">{cnt}</span>'
+                f'</div>'
+            )
+        filter_html += "</div>"
+        render_html(filter_html)
+
+        # Filter buttons
+        for key, (label, _) in FILTER_OPTIONS.items():
+            btn_type = "primary" if key == active_filter else "secondary"
+            if st.button(label, key=f"v5_f_{key}", use_container_width=True, type=btn_type):
+                st.session_state.v5_filter = key
+                st.session_state.v5_review_idx = 0
+                st.rerun()
+
+        # Asset list (clickable)
+        st.markdown("<div style='height:0.5rem;'></div>", unsafe_allow_html=True)
+        render_html('<div style="font-size:10px;color:#6A6460;font-weight:600;letter-spacing:0.6px;text-transform:uppercase;margin-bottom:0.4rem;">Assets</div>')
+        for i, j in enumerate(filtered):
+            s       = j.get("status", "")
+            dot     = {"review": "🟡", "approved": "🟢", "rejected": "🔴", "published": "🔵"}.get(s, "⚪")
+            lbl     = j.get("job_label", "Asset")
+            is_cur  = (i == idx)
+            border  = "border-left:3px solid #FF6B2B;" if is_cur else "border-left:3px solid transparent;"
+            bg      = "background:rgba(255,107,43,0.07);" if is_cur else ""
+            render_html(
+                f'<div style="padding:6px 10px;border-radius:6px;font-size:12px;'
+                f'color:{"#F0EDE8" if is_cur else "#8A8480"};margin-bottom:2px;{border}{bg}">'
+                f'{dot} {lbl[:28]}</div>'
+            )
+            if st.button(f"Select", key=f"v5_sel_{i}_{j['job_id']}", use_container_width=True):
+                st.session_state.v5_review_idx = i
+                st.rerun()
+
+    with right:
+        # Progress label
+        jid    = job["job_id"]
+        icon   = job.get("job_icon", "📄")
+        label  = job.get("job_label", "")
+        phase  = PHASE_LABELS.get(job.get("phase", ""), "")
+        status = job.get("status", "pending")
+
+        STATUS_COLORS = {"review": "#F59E0B", "approved": "#22C55E", "rejected": "#EF4444", "published": "#3B82F6"}
+        STATUS_ICONS  = {"review": "🟡", "approved": "🟢", "rejected": "🔴", "published": "🔵"}
+        s_color = STATUS_COLORS.get(status, "#8A8480")
+        s_icon  = STATUS_ICONS.get(status, "⚪")
+
+        render_html(
+            f'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;">'
+            f'<div style="font-size:13px;color:#8A8480;">Asset {idx + 1} of {total}</div>'
+            f'<span style="background:{s_color}22;color:{s_color};font-size:11px;font-weight:600;'
+            f'padding:3px 10px;border-radius:20px;border:1px solid {s_color}44;">'
+            f'{s_icon} {status.title()}</span>'
+            f'</div>'
+        )
+
+        render_html(
+            f'<div class="mw-asset-preview">'
+            f'<div style="font-size:11px;color:#8A8480;text-transform:uppercase;letter-spacing:0.6px;margin-bottom:0.4rem;">{phase}</div>'
+            f'<div style="font-size:22px;font-weight:700;color:#F0EDE8;margin-bottom:1.25rem;">{icon} {label}</div>'
+        )
+
+        # Connector meta
+        meta_file = gen_dir / f"{jid}_meta.json"
+        meta      = {}
+        if meta_file.exists():
+            try:
+                import json as _j
+                meta = _j.loads(meta_file.read_text(encoding="utf-8"))
+            except Exception:
+                pass
+
+        if meta:
+            provider = meta.get("provider_used", "mock")
+            is_mock  = meta.get("mock", False)
+            mock_tag = ' <span style="background:#F59E0B22;color:#F59E0B;font-size:10px;padding:2px 7px;border-radius:10px;font-weight:600;">MOCK</span>' if is_mock else ""
+            render_html(
+                f'<div style="font-size:12px;color:#6A6460;margin-bottom:1rem;">'
+                f'Provider: <span style="color:#C8C4BE;">{provider}</span>{mock_tag}</div>'
+            )
+
+        # Content preview
+        out_file = gen_dir / f"{jid}.md"
+        if out_file.exists():
+            content = out_file.read_text(encoding="utf-8")
+            st.markdown(
+                f'<div style="background:#080810;border:1px solid #1E1E1E;border-radius:10px;'
+                f'padding:1.25rem 1.5rem;font-size:13px;color:#C8C4BE;line-height:1.7;'
+                f'max-height:320px;overflow-y:auto;white-space:pre-wrap;font-family:inherit;">'
+                f'{content[:3000]}{"…" if len(content) > 3000 else ""}</div>',
+                unsafe_allow_html=True
+            )
+            render_html("</div>")  # close mw-asset-preview
+
+            # Version history
+            versions = job.get("versions", [])
+            if versions:
+                with st.expander(f"Version History ({len(versions)})", expanded=False):
+                    for v in reversed(versions):
+                        st.caption(f"v{v.get('version','')} — {v.get('at','')[:16]}")
+        else:
+            render_html(
+                '<div style="font-size:13px;color:#8A8480;padding:1.5rem 0;">No content generated yet.</div>'
+                '</div>'  # close mw-asset-preview
+            )
+
+        # ── Action buttons ────────────────────────────────────────────────────
+        if status == "review":
+            st.markdown("<div style='height:0.75rem;'></div>", unsafe_allow_html=True)
+            ba, bb, bc, bd = st.columns(4)
+            with ba:
+                if st.button("✓ Approve", key=f"v5a_{jid}", type="primary", use_container_width=True):
+                    update_job_status(artist_id, jid, "approved")
+                    st.session_state.v5_review_idx = min(idx + 1, total - 1)
+                    st.success("Approved!")
+                    st.rerun()
+            with bb:
+                if st.button("↺ Re-render", key=f"v5r_{jid}", use_container_width=True):
+                    update_job_status(artist_id, jid, "pending")
+                    st.info("Reset to Pending. Go to Production Queue to regenerate.")
+                    st.rerun()
+            with bc:
+                rev_key = f"v5rev_{jid}"
+                if st.button("✏ Revise", key=f"v5rv_btn_{jid}", use_container_width=True):
+                    st.session_state[rev_key] = not st.session_state.get(rev_key, False)
+                if st.session_state.get(rev_key):
+                    with st.form(f"v5rv_form_{jid}"):
+                        notes = st.text_area("What needs to change?", height=80)
+                        if st.form_submit_button("Submit Revision"):
+                            if notes.strip():
+                                from execution.production_queue import get_job, save_job
+                                j = get_job(artist_id, jid)
+                                if j:
+                                    j["notes"] = notes.strip()
+                                    save_job(j)
+                                update_job_status(artist_id, jid, "pending")
+                                st.session_state.pop(rev_key, None)
+                                st.rerun()
+            with bd:
+                if st.button("✗ Reject", key=f"v5rej_{jid}", use_container_width=True):
+                    update_job_status(artist_id, jid, "rejected")
+                    st.rerun()
+
+            # Download
+            if out_file.exists():
+                st.download_button(
+                    "⬇ Download",
+                    out_file.read_bytes(),
+                    file_name=f"{label.replace(' ','_')}_{jid}.md",
+                    mime="text/markdown",
+                    key=f"v5dl_{jid}",
+                )
+
+        elif status == "approved":
+            render_html(f'<div style="color:#22C55E;font-size:13px;font-weight:600;margin-bottom:0.5rem;">✓ Approved {job.get("approved_at","")[:10]}</div>')
+            pub_col, rer_col = st.columns([1, 1])
+            with pub_col:
+                if st.button("🚀 Add to Publishing Queue", key=f"v5pub_{jid}", type="primary", use_container_width=True):
+                    navigate_to("publishing")
+            with rer_col:
+                if st.button("↺ Re-render", key=f"v5rr2_{jid}", use_container_width=True):
+                    update_job_status(artist_id, jid, "pending")
+                    st.info("Reset to Pending.")
+                    st.rerun()
+            if out_file.exists():
+                st.download_button(
+                    "⬇ Download",
+                    out_file.read_bytes(),
+                    file_name=f"{label.replace(' ','_')}_{jid}.md",
+                    mime="text/markdown",
+                    key=f"v5dl2_{jid}",
+                )
+
+        # ── Previous / Next navigation ────────────────────────────────────────
+        st.markdown("<div style='height:0.5rem;'></div>", unsafe_allow_html=True)
+        pn1, pn2, pn3 = st.columns([1, 3, 1])
+        with pn1:
+            if idx > 0:
+                if st.button("← Previous", key="v5_prev", use_container_width=True):
+                    st.session_state.v5_review_idx = idx - 1
+                    st.rerun()
+        with pn2:
+            # dots indicator
+            dots = ""
+            for di in range(total):
+                if di == idx:
+                    dots += '<span style="font-size:14px;color:#FF6B2B;">●</span> '
+                elif di < total:
+                    dots += '<span style="font-size:10px;color:#333;">●</span> '
+            render_html(f'<div style="text-align:center;padding:6px 0;">{dots}</div>')
+        with pn3:
+            if idx < total - 1:
+                if st.button("Next →", key="v5_next", use_container_width=True):
+                    st.session_state.v5_review_idx = idx + 1
+                    st.rerun()
+            elif total > 0 and counts.get("approved", 0) > 0:
+                if st.button("🚀 Publish", key="v5_pub_end", type="primary", use_container_width=True):
+                    navigate_to("publishing")
+
+
+def _render_v5_main_review():
+    """Drives the V5 one-at-a-time review for V4 production queue jobs."""
+    from execution.production_queue import list_jobs
+    from brand_brain.artist_library import list_artists
+
+    artists = list_artists()
+    if not artists:
+        render_html("""
+        <div class="mw-card" style="text-align:center;padding:2rem;color:#8A8480;">
+            <div style="font-size:16px;color:#F0EDE8;margin-bottom:0.5rem;">No artists yet</div>
+            <div style="font-size:13px;">Create an artist profile first, then run the Production Queue.</div>
+        </div>
+        """)
+        if st.button("👥  Add Artist", type="primary", key="v5_add_artist"):
+            navigate_to("artists")
+        return
+
+    # Artist selector
+    names = [a["artist_name"] for a in artists]
+    ids   = [a["artist_id"]   for a in artists]
+    sel   = st.selectbox("Artist:", range(len(names)),
+                         format_func=lambda i: names[i], key="v5_artist_sel")
+    sel_id = ids[sel]
+
+    all_jobs = list_jobs(sel_id)
+    gen_dir  = Path(__file__).parent.parent.parent / "data" / "generated" / sel_id
+
+    # Quick summary stats
+    review_n   = sum(1 for j in all_jobs if j.get("status") == "review")
+    approved_n = sum(1 for j in all_jobs if j.get("status") == "approved")
+    published_n = sum(1 for j in all_jobs if j.get("status") == "published")
+
+    m1, m2, m3, m4 = st.columns(4)
+    m1.metric("In Review",  review_n)
+    m2.metric("Approved",   approved_n)
+    m3.metric("Published",  published_n)
+    m4.metric("Total Jobs", len(all_jobs))
+
+    if review_n > 0:
+        st.warning(f"{review_n} asset(s) waiting for your review.")
+
+    actionable = [j for j in all_jobs if j.get("status") in ("review", "approved")]
+    if not actionable:
+        render_html("""
+        <div class="mw-card" style="text-align:center;padding:2rem;color:#8A8480;margin-top:0.5rem;">
+            <div style="font-size:16px;color:#F0EDE8;margin-bottom:0.5rem;">No assets in review yet</div>
+            <div style="font-size:13px;">Generate content in the Production Queue to populate this section.</div>
+        </div>
+        """)
+        if st.button("📋  Go to Production Queue", type="primary", key="v5_goto_prod"):
+            navigate_to("production")
+        return
+
+    _v5_review(sel_id, all_jobs, gen_dir)
+
+
 # ── Main render ───────────────────────────────────────────────────────────────
 
 def render():
     page_header("Asset Review", "Nothing publishes until you approve it.", "✅")
 
+    # ── V5 one-at-a-time review (primary experience) ─────────────────────────
+    _render_v5_main_review()
+
+    # ── Legacy V3 campaign assets (Studio mode / advanced) ───────────────────
     try:
         lib = _get_library()
         campaign_ids = lib.get_all_campaign_ids()
@@ -254,18 +579,7 @@ def render():
         st.error(f"Could not connect to asset database: {e}")
         return
 
-    # ── V4 Production Queue review tab ───────────────────────────────────────
-    _render_v4_review_section()
-
     if not campaign_ids:
-        render_html("""
-        <div class="mw-card" style="text-align:center; padding:2rem; color:#8A8480; margin-top:1rem;">
-            <div style="font-size:18px; color:#F0EDE8; margin-bottom:0.5rem;">No legacy release assets yet</div>
-            <div style="font-size:13px;">Use the Production Queue to generate assets for your releases.</div>
-        </div>
-        """)
-        if st.button("📋  Go to Production Queue", type="primary"):
-            navigate_to("production")
         return
 
     st.divider()

@@ -474,6 +474,45 @@ hr { border-color: #242424 !important; }
 .build-log-done {
     color: #22C55E;
 }
+
+/* ════════════════════════════════════════════
+   V5 — Founder Experience Design System
+   ════════════════════════════════════════════ */
+
+/* ── V5 Action Cards (home page) ── */
+.mw-action-card {
+    border-radius: 20px;
+    padding: 1.75rem 2rem;
+    margin-bottom: 0.75rem;
+    min-height: 155px;
+    position: relative;
+    overflow: hidden;
+}
+.mw-action-card-release  { background: linear-gradient(135deg, #1A0F42 0%, #2D1B69 100%); border: 1px solid rgba(168,85,247,0.25); }
+.mw-action-card-continue { background: linear-gradient(135deg, #0F1A2A 0%, #1A3A4A 100%); border: 1px solid rgba(96,165,250,0.2); }
+.mw-action-card-artists  { background: linear-gradient(135deg, #0F2A1A 0%, #1A4A2A 100%); border: 1px solid rgba(34,197,94,0.2); }
+.mw-action-card-results  { background: linear-gradient(135deg, #2A1A0F 0%, #3A2A0F 100%); border: 1px solid rgba(212,168,83,0.2); }
+
+/* ── V5 Asset filter sidebar ── */
+.mw-filter-list { background: #0D0D0D; border: 1px solid #1E1E1E; border-radius: 12px; padding: 0.5rem; margin-bottom: 1rem; }
+.mw-filter-item { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; border-radius: 8px; font-size: 13px; color: #C8C4BE; margin-bottom: 2px; }
+.mw-filter-item-active { background: rgba(255,107,43,0.1); color: #FF6B2B; font-weight: 600; }
+.mw-filter-count { background: #242424; color: #8A8480; font-size: 11px; font-weight: 600; border-radius: 10px; padding: 1px 7px; }
+
+/* ── V5 Platform pills (publishing) ── */
+.mw-platform-row { display: flex; flex-wrap: wrap; gap: 10px; margin: 1rem 0 1.5rem 0; }
+.mw-platform-pill { display: inline-flex; align-items: center; gap: 8px; background: #141414; border: 1px solid #333; border-radius: 40px; padding: 10px 20px; font-size: 14px; font-weight: 500; color: #C8C4BE; }
+.mw-platform-pill-on { background: rgba(255,107,43,0.12); border: 1px solid rgba(255,107,43,0.4); color: #FF6B2B; font-weight: 600; }
+
+/* ── V5 Asset preview card ── */
+.mw-asset-preview { background: #0D0D14; border: 1px solid rgba(255,255,255,0.07); border-radius: 16px; padding: 1.75rem 2rem; }
+
+/* ── V5 Mode toggle (sidebar) ── */
+.mw-mode-section { margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid #1E1E1E; }
+.mw-mode-label { font-size: 10px; color: #6A6460; font-weight: 600; letter-spacing: 0.8px; text-transform: uppercase; margin-bottom: 0.5rem; }
+
+/* ── V5 Release snapshot (home) ── */
+.mw-release-snapshot { background: linear-gradient(135deg, #0F0F1E 0%, #1A0F42 100%); border: 1px solid rgba(168,85,247,0.15); border-radius: 16px; padding: 1.5rem 2rem; margin-top: 2rem; }
 """
 
 

@@ -75,6 +75,9 @@ elif page == "connections":
 elif page == "compliance":
     from ui.pages.compliance import render
     render()
+elif page == "media_library":
+    from ui.pages.media_library import render
+    render()
 elif page == "settings":
     from ui.pages.settings import render
     render()

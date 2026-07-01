@@ -56,25 +56,32 @@ def _progress_header():
     items = ""
     for i, label in enumerate(STEPS):
         if i < current:
-            color = "#22C55E"; dot = "✓"; text_color = "#22C55E"; txt_w = "400"
+            bg = "#22C55E"; dot = "✓"; tc = "#22C55E"; fw = "500"; nc = "#fff"
+            shadow = ""
         elif i == current:
-            color = "#FF6B2B"; dot = str(i + 1); text_color = "#F0EDE8"; txt_w = "600"
+            bg = "#FF6B2B"; dot = str(i + 1); tc = "#F0EDE8"; fw = "700"; nc = "#fff"
+            shadow = "box-shadow:0 0 14px rgba(255,107,43,0.45);"
         else:
-            color = "#2A2A2A"; dot = str(i + 1); text_color = "#6A6460"; txt_w = "400"
-        num_color = "#fff" if i <= current else "#6A6460"
+            bg = "#242424"; dot = str(i + 1); tc = "#6A6460"; fw = "400"; nc = "#6A6460"
+            shadow = ""
         connector = (
-            f'<div style="flex:1;height:1px;background:{"#22C55E" if i < current else "#333"};margin:0 4px;align-self:center;"></div>'
+            f'<div style="flex:1;height:2px;background:{"#22C55E" if i < current else "#242424"};'
+            f'margin:0 6px;align-self:center;border-radius:1px;"></div>'
             if i < len(STEPS) - 1 else ""
         )
         items += (
             f'<div style="display:flex;align-items:center;">'
-            f'<div style="display:flex;flex-direction:column;align-items:center;gap:4px;">'
-            f'<div style="width:28px;height:28px;border-radius:50%;background:{color};color:{num_color};font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;">{dot}</div>'
-            f'<div style="font-size:10px;color:{text_color};font-weight:{txt_w};white-space:nowrap;">{label}</div>'
+            f'<div style="display:flex;flex-direction:column;align-items:center;gap:5px;">'
+            f'<div style="width:36px;height:36px;border-radius:50%;background:{bg};color:{nc};'
+            f'font-size:14px;font-weight:700;display:flex;align-items:center;justify-content:center;'
+            f'flex-shrink:0;{shadow}">{dot}</div>'
+            f'<div style="font-size:10px;color:{tc};font-weight:{fw};white-space:nowrap;">{label}</div>'
             f'</div>{connector}</div>'
         )
     st.markdown(
-        f'<div class="mw-card" style="padding:1.25rem 1.5rem;margin-bottom:1.5rem;"><div style="display:flex;align-items:flex-start;justify-content:space-between;">{items}</div></div>',
+        f'<div class="mw-card" style="padding:1.25rem 1.75rem;margin-bottom:1.75rem;">'
+        f'<div style="display:flex;align-items:flex-start;justify-content:space-between;">{items}</div>'
+        f'</div>',
         unsafe_allow_html=True,
     )
 

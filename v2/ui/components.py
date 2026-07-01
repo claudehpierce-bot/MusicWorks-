@@ -19,8 +19,39 @@ def render_html(html: str):
 
 # ── Navigation ────────────────────────────────────────────────────────────────
 
+_CREATOR_NAV = [
+    ("🏠", "Home",           "home"),
+    ("🚀", "Release a Song", "wizard"),
+    ("🎵", "My Releases",    "campaigns"),
+    ("👥", "Artists",        "artists"),
+    ("📚", "Media Library",  "media_library"),
+    ("📊", "Results",        "analytics"),
+]
+
+_STUDIO_NAV = [
+    ("🏠", "Home",             "home"),
+    ("🏭", "Media Factory",    "media_studio"),
+    ("👥", "Artists",          "artists"),
+    ("📋", "Production",       "production"),
+    ("📅", "Calendar",         "calendar"),
+    ("🎵", "Projects",         "projects"),
+    ("🗄️", "Studio",           "studio"),
+    ("📦", "Releases",         "campaigns"),
+    ("✅", "Asset Review",     "approval"),
+    ("🚀", "Publishing",       "publishing"),
+    ("📊", "Analytics",        "analytics"),
+    ("🧠", "Brand Brain",      "brand_brain"),
+    ("🧰", "Media Toolbox",    "connections"),
+    ("🛡️", "Compliance",       "compliance"),
+    ("⚙",  "Settings",         "settings"),
+]
+
+
 def nav_sidebar() -> str:
     """Render left navigation. Returns current page id."""
+    if "studio_mode" not in st.session_state:
+        st.session_state.studio_mode = False
+
     with st.sidebar:
         st.markdown("""
         <div style="padding: 0.5rem 0 1.25rem 0; border-bottom: 1px solid #1E1E1E; margin-bottom: 1rem;">
@@ -36,26 +67,11 @@ def nav_sidebar() -> str:
         """, unsafe_allow_html=True)
 
         current = st.session_state.get("page", "home")
+        studio_mode = st.session_state.studio_mode
 
-        NAV_ITEMS = [
-            ("🏠", "Home",             "home"),
-            ("🏭", "Media Factory",    "media_studio"),
-            ("👥", "Artists",          "artists"),
-            ("📋", "Production",       "production"),
-            ("📅", "Calendar",         "calendar"),
-            ("🎵", "Projects",         "projects"),
-            ("🗄️", "Studio",           "studio"),
-            ("📦", "Releases",         "campaigns"),
-            ("✅", "Asset Review",     "approval"),
-            ("🚀", "Publishing",       "publishing"),
-            ("📊", "Analytics",        "analytics"),
-            ("🧠", "Brand Brain",      "brand_brain"),
-            ("🧰", "Media Toolbox",    "connections"),
-            ("🛡️", "Compliance",       "compliance"),
-            ("⚙",  "Settings",         "settings"),
-        ]
+        nav_items = _STUDIO_NAV if studio_mode else _CREATOR_NAV
 
-        for icon, label, page_id in NAV_ITEMS:
+        for icon, label, page_id in nav_items:
             is_active = current == page_id
             if st.button(
                 f"{icon}  {label}",
@@ -66,9 +82,28 @@ def nav_sidebar() -> str:
                 st.session_state.page = page_id
                 st.rerun()
 
-        # Active artist card pinned at bottom
+        # ── Mode toggle ────────────────────────────────────────────────────────
         st.markdown("""
-        <div style="margin-top: 2rem;">
+        <div class="mw-mode-section">
+            <div class="mw-mode-label">View Mode</div>
+        </div>
+        """, unsafe_allow_html=True)
+
+        mode_col1, mode_col2 = st.columns(2)
+        with mode_col1:
+            creator_type = "primary" if not studio_mode else "secondary"
+            if st.button("✨ Creator", key="mode_creator", use_container_width=True, type=creator_type):
+                st.session_state.studio_mode = False
+                st.rerun()
+        with mode_col2:
+            studio_type = "primary" if studio_mode else "secondary"
+            if st.button("⚙ Studio", key="mode_studio", use_container_width=True, type=studio_type):
+                st.session_state.studio_mode = True
+                st.rerun()
+
+        # Active artist card
+        st.markdown("""
+        <div style="margin-top: 1.25rem;">
             <div style="background: linear-gradient(135deg, #1A0F42, #2D1B69);
                         border-radius: 10px; padding: 0.875rem 1rem;
                         border: 1px solid rgba(212,168,83,0.2);">

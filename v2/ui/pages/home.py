@@ -1,221 +1,186 @@
-"""MusicWorks™ V3 — Executive Dashboard (Home)."""
+"""MusicWorks™ V5 — Founder Home (Creator Mode experience)."""
 import sys
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 import streamlit as st
 from datetime import datetime
-from ui.components import countdown_days, navigate_to, progress_bar_html, status_badge, render_html
+from ui.components import countdown_days, navigate_to, progress_bar_html, render_html
 
 
-def _new_project():
+def _new_release():
     st.session_state.wizard_step = 0
     st.session_state.wizard_data = {}
     st.session_state.pop("wizard_campaign_id", None)
     navigate_to("wizard")
 
 
-def render():
-    # ── Greeting ──────────────────────────────────────────────────────────────
-    hour = datetime.now().hour
-    greeting = "Good morning" if hour < 12 else ("Good afternoon" if hour < 17 else "Good evening")
+def _get_last_campaign() -> str | None:
+    try:
+        from execution.asset_library import AssetLibrary
+        lib = AssetLibrary()
+        ids = lib.get_all_campaign_ids()
+        return ids[-1] if ids else None
+    except Exception:
+        return None
 
-    render_html(
-        f'<div style="margin-bottom:1.5rem;">'
-        f'<h1 style="margin:0 0 4px 0;">{greeting}, Founder</h1>'
-        f'<p style="color:#8A8480;font-size:15px;margin:0;">MusicWorks™ is ready. Here\'s where things stand.</p>'
+
+def _action_card(variant: str, icon: str, title: str, desc: str) -> str:
+    desc_color = {
+        "release":  "#9B89D4",
+        "continue": "#93C5FD",
+        "artists":  "#6EC894",
+        "results":  "#D4A853",
+    }.get(variant, "#8A8480")
+    return (
+        f'<div class="mw-action-card mw-action-card-{variant}">'
+        f'<div style="font-size:36px;line-height:1;margin-bottom:0.6rem;">{icon}</div>'
+        f'<div style="font-size:19px;font-weight:700;color:#F0EDE8;margin-bottom:0.35rem;">{title}</div>'
+        f'<div style="font-size:13px;color:{desc_color};line-height:1.55;">{desc}</div>'
         f'</div>'
     )
 
-    # ── Load data ─────────────────────────────────────────────────────────────
+
+def _release_snapshot():
+    """Compact active release card below the action grid."""
     try:
         from execution.asset_library import AssetLibrary
         lib = AssetLibrary()
         campaign_ids = lib.get_all_campaign_ids()
-        active_campaign = campaign_ids[-1] if campaign_ids else None
-        stats = lib.get_campaign_stats(active_campaign) if active_campaign else {"total": 0, "approved": 0, "pending": 0, "rejected": 0, "all_approved": False}
-        log = lib.get_approval_log(active_campaign) if active_campaign else []
+        if not campaign_ids:
+            return
+        stats = lib.get_campaign_stats(campaign_ids[-1])
     except Exception:
-        stats = {"total": 0, "approved": 0, "pending": 0, "rejected": 0, "all_approved": False}
-        campaign_ids = []
-        active_campaign = None
-        log = []
+        return
 
-    # ── Determine active song context ─────────────────────────────────────────
-    # Try to load active song from data
-    song_title = "HLANGANA"
-    song_subtitle = "Zulu · Gather Together · Hebrews 10:25"
-    artist_name = "Fire & Flow Gospel"
-    album = "Becoming Vol. 1"
+    song_title   = "HLANGANA"
+    artist_name  = "Fire & Flow Gospel"
     release_date = "2026-07-03"
+    album        = "Becoming Vol. 1"
 
-    if active_campaign:
-        try:
-            import json
-            from pathlib import Path as _Path
-            songs_dir = _Path(__file__).parent.parent.parent / "data" / "songs"
-            song_files = list(songs_dir.glob("*.json"))
-            if song_files:
-                latest = sorted(song_files, key=lambda f: f.stat().st_mtime)[-1]
-                s = json.loads(latest.read_text(encoding="utf-8"))
-                song_title = s.get("title", song_title)
-                song_subtitle = f"{s.get('title_language', '')} · {s.get('title_meaning', '')} · {s.get('scripture_primary', '')}".strip(" · ")
-                artist_name = s.get("artist_name", artist_name)
-                album = s.get("album_title", album)
-                release_date = s.get("release_date", release_date)
-        except Exception:
-            pass
+    try:
+        import json
+        songs_dir = Path(__file__).parent.parent.parent / "data" / "songs"
+        files = sorted(songs_dir.glob("*.json"), key=lambda f: f.stat().st_mtime)
+        if files:
+            s = json.loads(files[-1].read_text(encoding="utf-8"))
+            song_title   = s.get("title",         song_title)
+            artist_name  = s.get("artist_name",   artist_name)
+            release_date = s.get("release_date",  release_date)
+            album        = s.get("album_title",   album)
+    except Exception:
+        pass
 
-    days_left = countdown_days(release_date)
-    if days_left > 0:
-        days_label = f"days until launch"
-    elif days_left == 0:
-        days_label = "Launch Day!"
-    else:
-        days_label = f"days since launch"
+    days_left   = countdown_days(release_date)
+    days_label  = ("days until launch" if days_left > 0
+                   else ("Launch Day! 🎉" if days_left == 0 else "days since launch"))
+    total       = stats.get("total", 0)
+    approved    = stats.get("approved", 0)
+    pending     = stats.get("pending", 0)
+    pct         = (approved / total * 100) if total > 0 else 0
 
-    total = stats.get("total", 0)
-    approved = stats.get("approved", 0)
-    pending = stats.get("pending", 0)
-    health_pct = (approved / total * 100) if total > 0 else 0
-
-    # ── Hero Card ─────────────────────────────────────────────────────────────
-    # Build as a single-line string — no internal newlines so the JS Markdown
-    # parser never misreads a closing tag as an indented code block.
-    _campaign_label = 'Active Campaign' if active_campaign else 'No campaigns yet'
-    _pb = progress_bar_html(health_pct, f"Approval Progress — {health_pct:.0f}%")
-    _left = (
-        f'<div style="flex:1;min-width:260px;">'
-        f'<div style="font-size:11px;color:#D4A853;font-weight:600;letter-spacing:0.8px;text-transform:uppercase;margin-bottom:0.5rem;">{_campaign_label}</div>'
-        f'<div style="font-size:30px;font-weight:800;color:#F0EDE8;letter-spacing:-0.5px;line-height:1.1;margin-bottom:4px;">{song_title}</div>'
-        f'<div style="font-size:14px;color:#9B89D4;margin-bottom:0.75rem;">{song_subtitle}</div>'
-        f'<div style="font-size:13px;color:#8A8480;margin-bottom:0.25rem;">{artist_name}</div>'
-        f'<div style="font-size:13px;color:#8A8480;margin-bottom:1.5rem;">{album} · {release_date}</div>'
-        f'<div style="display:flex;align-items:baseline;gap:8px;">'
-        f'<span style="font-size:44px;font-weight:800;color:#FF6B2B;letter-spacing:-2px;line-height:1;">{abs(days_left)}</span>'
-        f'<span style="font-size:14px;color:#8A8480;">{days_label}</span>'
-        f'</div></div>'
-    )
-    _grid = (
-        f'<div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem;">'
-        f'<div style="background:rgba(255,255,255,0.05);border-radius:8px;padding:0.75rem 1rem;"><div style="font-size:22px;font-weight:700;color:#F0EDE8;">{total}</div><div style="font-size:11px;color:#8A8480;">Total Assets</div></div>'
-        f'<div style="background:rgba(34,197,94,0.08);border-radius:8px;padding:0.75rem 1rem;"><div style="font-size:22px;font-weight:700;color:#22C55E;">{approved}</div><div style="font-size:11px;color:#8A8480;">Approved</div></div>'
-        f'<div style="background:rgba(245,158,11,0.08);border-radius:8px;padding:0.75rem 1rem;"><div style="font-size:22px;font-weight:700;color:#F59E0B;">{pending}</div><div style="font-size:11px;color:#8A8480;">Pending</div></div>'
-        f'<div style="background:rgba(255,107,43,0.08);border-radius:8px;padding:0.75rem 1rem;"><div style="font-size:22px;font-weight:700;color:#FF6B2B;">{len(campaign_ids)}</div><div style="font-size:11px;color:#8A8480;">Campaigns</div></div>'
+    render_html(
+        f'<div class="mw-release-snapshot">'
+        f'<div style="font-size:10px;color:#A855F7;font-weight:600;letter-spacing:0.8px;'
+        f'text-transform:uppercase;margin-bottom:0.6rem;">Active Release</div>'
+        f'<div style="display:flex;justify-content:space-between;align-items:flex-start;'
+        f'flex-wrap:wrap;gap:1.5rem;">'
+        f'<div>'
+        f'<div style="font-size:22px;font-weight:800;color:#F0EDE8;">{song_title}</div>'
+        f'<div style="font-size:13px;color:#8A8480;margin-top:2px;">{artist_name} · {album}</div>'
+        f'</div>'
+        f'<div style="display:flex;gap:2rem;">'
+        f'<div style="text-align:center;">'
+        f'<div style="font-size:30px;font-weight:800;color:#FF6B2B;line-height:1;">{abs(days_left)}</div>'
+        f'<div style="font-size:11px;color:#8A8480;">{days_label}</div>'
+        f'</div>'
+        f'<div style="text-align:center;">'
+        f'<div style="font-size:30px;font-weight:800;color:#22C55E;line-height:1;">{approved}</div>'
+        f'<div style="font-size:11px;color:#8A8480;">Approved</div>'
+        f'</div>'
+        f'<div style="text-align:center;">'
+        f'<div style="font-size:30px;font-weight:800;color:#F59E0B;line-height:1;">{pending}</div>'
+        f'<div style="font-size:11px;color:#8A8480;">Pending</div>'
+        f'</div>'
+        f'</div>'
+        f'</div>'
+        f'<div style="margin-top:1rem;">{progress_bar_html(pct, f"Approval Progress — {pct:.0f}%")}</div>'
         f'</div>'
     )
-    _right = (
-        f'<div style="flex:1;min-width:220px;">'
-        f'<div style="font-size:11px;color:#8A8480;font-weight:600;letter-spacing:0.8px;text-transform:uppercase;margin-bottom:1rem;">Campaign Health</div>'
-        f'{_grid}{_pb}'
-        f'</div>'
-    )
-    st.markdown(
-        f'<div class="mw-hero"><div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:2rem;">{_left}{_right}</div></div>',
-        unsafe_allow_html=True,
-    )
 
-    col_a, col_b, col_c = st.columns([1, 1, 1])
-    with col_a:
-        if st.button("➕  New Project", type="primary", use_container_width=True):
-            _new_project()
-    with col_b:
-        if st.button("🚀  Build Campaign", type="secondary", use_container_width=True):
-            if active_campaign:
-                navigate_to("campaigns")
-            else:
-                _new_project()
-    with col_c:
-        if st.button("✅  Approval Queue", type="secondary", use_container_width=True):
-            if active_campaign:
-                st.session_state.approval_campaign_id = active_campaign
+    r1, r2, r3 = st.columns(3)
+    with r1:
+        if st.button("✅  Review Assets", key="snap_review", use_container_width=True):
             navigate_to("approval")
+    with r2:
+        if st.button("🚀  Publishing", key="snap_publish", use_container_width=True, type="primary"):
+            navigate_to("publishing")
+    with r3:
+        if st.button("📊  See Analytics", key="snap_analytics", use_container_width=True):
+            navigate_to("analytics")
 
-    st.markdown("<div style='margin-bottom:1.5rem;'></div>", unsafe_allow_html=True)
 
-    # ── Content Calendar + Quick Actions ─────────────────────────────────────
-    left, right = st.columns([1.5, 1])
+def render():
+    # ── Greeting ──────────────────────────────────────────────────────────────
+    hour     = datetime.now().hour
+    greeting = "Good morning" if hour < 12 else ("Good afternoon" if hour < 17 else "Good evening")
 
-    with left:
-        st.markdown("<div class='mw-section-label'>Content Calendar</div>", unsafe_allow_html=True)
-        calendar = [
-            ("Jul 3", "8:30 AM", "Instagram Reels", "HLANGANA launch video"),
-            ("Jul 3", "8:30 AM", "YouTube Shorts",  "HLANGANA launch video"),
-            ("Jul 3", "9:00 AM", "TikTok",          "HLANGANA launch video"),
-            ("Jul 3", "10:00 AM","Facebook Reels",  "HLANGANA launch video"),
-            ("Jul 5", "8:00 AM", "Blog / Website",  "Devotional blog post"),
-            ("Jul 7", "10:00 AM","Media Outreach",  "Press release"),
-            ("Jul 10","9:00 AM", "Instagram",       "Behind-the-song"),
-        ]
-        entries_html = "".join(
-            f'<div style="display:flex;align-items:flex-start;gap:10px;padding:8px 0;border-bottom:1px solid #1E1E1E;">'
-            f'<div style="min-width:36px;font-size:10px;color:#D4A853;font-weight:600;padding-top:2px;white-space:nowrap;">{date_s}</div>'
-            f'<div style="min-width:52px;font-size:10px;color:#8A8480;padding-top:2px;white-space:nowrap;">{time_s}</div>'
-            f'<div><div style="font-size:12px;color:#F0EDE8;font-weight:500;">{platform}</div>'
-            f'<div style="font-size:11px;color:#8A8480;">{note}</div></div></div>'
-            for date_s, time_s, platform, note in calendar
-        )
-        render_html(f'<div class="mw-card" style="padding:1rem;">{entries_html}</div>')
+    render_html(
+        f'<div style="margin-bottom:2rem;">'
+        f'<h1 style="margin:0 0 6px 0;font-size:2.2rem;">{greeting}, Founder! 👋</h1>'
+        f'<p style="color:#8A8480;font-size:16px;margin:0;">What would you like to do today?</p>'
+        f'</div>'
+    )
 
-    with right:
-        st.markdown("<div class='mw-section-label'>Quick Actions</div>", unsafe_allow_html=True)
-        actions = [
-            ("➕", "New Project", "wizard", True),
-            ("👥", "Artist Library", "artists", False),
-            ("🎵", "Projects", "projects", False),
-            ("✅", "Approval Queue", "approval", False),
-            ("🚀", "Publishing", "publishing", False),
-            ("🧠", "Brand Brain", "brand_brain", False),
-            ("📊", "Analytics", "analytics", False),
-        ]
-        for icon, label, page, is_primary in actions:
-            if st.button(f"{icon}  {label}", key=f"qa_{page}", use_container_width=True,
-                         type="primary" if is_primary else "secondary"):
-                if page == "wizard":
-                    _new_project()
-                else:
-                    navigate_to(page)
+    # ── 4 Action Cards (2 × 2) ───────────────────────────────────────────────
+    last_campaign = _get_last_campaign()
 
-    st.markdown("<div style='margin-bottom:1.5rem;'></div>", unsafe_allow_html=True)
+    col1, col2 = st.columns(2, gap="medium")
 
-    # ── Recent Activity ───────────────────────────────────────────────────────
-    st.markdown("<div class='mw-section-label'>Recent Activity</div>", unsafe_allow_html=True)
+    with col1:
+        render_html(_action_card(
+            "release", "🚀", "Release a Song",
+            "Start a new release. We'll create videos, social posts, and articles for you automatically."
+        ))
+        if st.button("Start New Release →", key="home_release", type="primary", use_container_width=True):
+            _new_release()
 
-    if log:
-        entries_html = ""
-        for entry in log[-5:][::-1]:
-            decision = entry.get("decision", "")
-            desc = entry.get("asset_description", entry.get("asset_id", ""))
-            at = entry.get("decision_at", "")
-            try:
-                dt = datetime.fromisoformat(at.replace("Z", "+00:00"))
-                at_fmt = dt.strftime("%b %d at %H:%M UTC")
-            except Exception:
-                at_fmt = at[:10] if at else ""
-            dot_color = {
-                "APPROVED": "#22C55E",
-                "REJECTED": "#EF4444",
-                "REVISION_REQUESTED": "#60A5FA",
-            }.get(decision, "#F59E0B")
-            entries_html += (
-                f'<div class="timeline-entry">'
-                f'<div class="timeline-dot" style="background:{dot_color};"></div>'
-                f'<div><div style="font-size:13px;color:#F0EDE8;">{desc}</div>'
-                f'<div style="font-size:11px;color:#8A8480;">{status_badge(decision)} · {at_fmt}</div>'
-                f'</div></div>'
-            )
-        render_html(f'<div class="mw-card" style="padding:1rem 1.5rem;">{entries_html}</div>')
-    else:
-        render_html("""
-        <div class="mw-card" style="text-align:center; padding:2rem; color:#8A8480;">
-            No activity yet. Build your first campaign to see progress here.
-        </div>
-        """)
+        st.markdown("<div style='height:1.25rem;'></div>", unsafe_allow_html=True)
 
-    # ── Brand statement ────────────────────────────────────────────────────────
+        render_html(_action_card(
+            "artists", "👥", "Manage Artists",
+            "View and update your artist profiles, brand guidelines, and biography."
+        ))
+        if st.button("View Artists →", key="home_artists", use_container_width=True):
+            navigate_to("artists")
+
+    with col2:
+        render_html(_action_card(
+            "continue", "🎵", "Continue Release",
+            "Pick up where you left off — review assets and get closer to launch."
+        ))
+        if last_campaign:
+            if st.button("Continue Release →", key="home_continue", use_container_width=True):
+                navigate_to("approval")
+        else:
+            st.button("No Active Releases", key="home_continue", use_container_width=True, disabled=True)
+
+        st.markdown("<div style='height:1.25rem;'></div>", unsafe_allow_html=True)
+
+        render_html(_action_card(
+            "results", "📊", "View Results",
+            "See your performance analytics and how your music is reaching people."
+        ))
+        if st.button("See Analytics →", key="home_results", use_container_width=True):
+            navigate_to("analytics")
+
+    # ── Active release snapshot ───────────────────────────────────────────────
+    _release_snapshot()
+
+    # ── Brand statement ───────────────────────────────────────────────────────
     render_html("""
-    <div style="margin-top:2rem; text-align:center; padding:1.5rem; border-top:1px solid #1E1E1E;">
-        <div style="font-size:12px; color:#6A6460; letter-spacing:0.3px;">
+    <div style="margin-top:2.5rem;text-align:center;padding:1.5rem;border-top:1px solid #1E1E1E;">
+        <div style="font-size:12px;color:#6A6460;letter-spacing:0.3px;">
             Human-led. AI-assisted. Scripture-rooted. Built to spread the Gospel through art.
         </div>
     </div>
