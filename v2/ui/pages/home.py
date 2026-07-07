@@ -44,40 +44,46 @@ def _action_card(variant: str, icon: str, title: str, desc: str) -> str:
 
 def _release_snapshot():
     """Compact active release card below the action grid."""
-    try:
-        from execution.asset_library import AssetLibrary
-        lib = AssetLibrary()
-        campaign_ids = lib.get_all_campaign_ids()
-        if not campaign_ids:
-            return
-        stats = lib.get_campaign_stats(campaign_ids[-1])
-    except Exception:
-        return
-
     song_title   = "HLANGANA"
     artist_name  = "Fire & Flow Gospel"
     release_date = "2026-07-03"
     album        = "Becoming Vol. 1"
+    artist_id    = None
 
     try:
         import json
         songs_dir = Path(__file__).parent.parent.parent / "data" / "songs"
         files = sorted(songs_dir.glob("*.json"), key=lambda f: f.stat().st_mtime)
-        if files:
-            s = json.loads(files[-1].read_text(encoding="utf-8"))
-            song_title   = s.get("title",         song_title)
-            artist_name  = s.get("artist_name",   artist_name)
-            release_date = s.get("release_date",  release_date)
-            album        = s.get("album_title",   album)
+        if not files:
+            return
+        s = json.loads(files[-1].read_text(encoding="utf-8"))
+        song_title   = s.get("title",         song_title)
+        artist_name  = s.get("artist_name",   artist_name)
+        release_date = s.get("release_date",  release_date)
+        album        = s.get("album_title",   album)
+        artist_id    = s.get("artist_id")
     except Exception:
-        pass
+        return
+
+    if not artist_id:
+        return
+
+    try:
+        # Same source Asset Review uses, so the two pages never disagree.
+        from execution.production_queue import queue_stats
+        stats = queue_stats(artist_id)
+    except Exception:
+        return
+
+    total = stats.get("total", 0)
+    if total == 0:
+        return
 
     days_left   = countdown_days(release_date)
     days_label  = ("days until launch" if days_left > 0
                    else ("Launch Day! 🎉" if days_left == 0 else "days since launch"))
-    total       = stats.get("total", 0)
     approved    = stats.get("approved", 0)
-    pending     = stats.get("pending", 0)
+    pending     = stats.get("review", 0)
     pct         = (approved / total * 100) if total > 0 else 0
 
     render_html(

@@ -374,16 +374,19 @@ def _render_v5_main_review():
     all_jobs = list_jobs(sel_id)
     gen_dir  = Path(__file__).parent.parent.parent / "data" / "generated" / sel_id
 
-    # Quick summary stats
-    review_n   = sum(1 for j in all_jobs if j.get("status") == "review")
-    approved_n = sum(1 for j in all_jobs if j.get("status") == "approved")
-    published_n = sum(1 for j in all_jobs if j.get("status") == "published")
+    # Quick summary stats — same source Home's snapshot and Results use,
+    # so the numbers never disagree between pages.
+    from execution.production_queue import queue_stats
+    stats = queue_stats(sel_id)
+    review_n    = stats.get("review", 0)
+    approved_n  = stats.get("approved", 0)
+    published_n = stats.get("published", 0)
 
     m1, m2, m3, m4 = st.columns(4)
     m1.metric("In Review",  review_n)
     m2.metric("Approved",   approved_n)
     m3.metric("Published",  published_n)
-    m4.metric("Total Jobs", len(all_jobs))
+    m4.metric("Total Jobs", stats.get("total", 0))
 
     if review_n > 0:
         st.warning(f"{review_n} asset(s) waiting for your review.")

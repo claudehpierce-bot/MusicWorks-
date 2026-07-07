@@ -840,15 +840,15 @@ def _step_launch():
         default_mock = True
 
     if not has_key:
-        st.warning("No Anthropic API key found — running in Mock Mode. Assets will use sample data.")
+        st.info("✨ Your campaign is being prepared. This preview uses sample content — connect your Creative Engines in Settings any time for a fully generated campaign.")
 
     # Mock mode lives in an expander — launch button is the hero action
     with st.expander("⚙ Advanced options", expanded=False):
         st.checkbox(
-            "Use Mock Mode (sample data — no API calls)",
+            "Use sample content (preview without generating real assets)",
             value=default_mock,
             key="wizard_mock_override",
-            help="Enable this if you don't have an API key set up yet.",
+            help="Turn this on to preview your campaign structure before connecting your Creative Engines.",
         )
     if "wizard_mock_override" not in st.session_state:
         st.session_state.wizard_mock_override = default_mock
@@ -862,6 +862,7 @@ def _step_launch():
             campaign_id = _run_campaign_build(d, st.session_state.wizard_mock_override)
             if campaign_id:
                 st.session_state.wizard_campaign_id = campaign_id
+                st.balloons()
                 st.rerun()
 
 
