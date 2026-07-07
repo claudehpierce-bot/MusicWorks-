@@ -101,8 +101,8 @@ def test_connection(key: str) -> tuple[bool, str]:
     if tester:
         return tester()
     # All other providers: check if key is present (real live tests are not
-    # yet implemented for them — only Claude, Google AI, HeyGen, and Veo
-    # have working live checks today).
+    # yet implemented for them — only Claude, Google AI, HeyGen, Leonardo AI,
+    # and Veo have working live checks today).
     status = get_connection_status(key)
     if status["has_key"]:
         msg = "API key present (live test not yet implemented for this provider)"
@@ -181,8 +181,39 @@ def _test_heygen() -> tuple[bool, str]:
         return False, msg
 
 
+def _test_leonardo() -> tuple[bool, str]:
+    status = get_connection_status("leonardo")
+    if not status["has_key"]:
+        msg = "Not configured — set LEONARDO_API_KEY to connect"
+        record_test("leonardo", False, msg)
+        return False, msg
+    try:
+        import requests
+        resp = requests.get(
+            "https://cloud.leonardo.ai/api/rest/v1/me",
+            headers={"Authorization": f"Bearer {_get_env('LEONARDO_API_KEY')}"},
+            timeout=10,
+        )
+        if resp.status_code == 200:
+            msg = "Connected — Leonardo AI API responding"
+            record_test("leonardo", True, msg)
+            return True, msg
+        if resp.status_code in (401, 403):
+            msg = f"Configuration error: Leonardo AI rejected the API key (HTTP {resp.status_code})"
+            record_test("leonardo", False, msg)
+            return False, msg
+        msg = f"Configuration error: Leonardo AI returned HTTP {resp.status_code}"
+        record_test("leonardo", False, msg)
+        return False, msg
+    except Exception as e:
+        msg = f"Configuration error: {str(e)[:100]}"
+        record_test("leonardo", False, msg)
+        return False, msg
+
+
 _REAL_TESTS.update({
     "claude": _test_claude,
     "google_imagen": _test_google_imagen,
     "heygen": _test_heygen,
+    "leonardo": _test_leonardo,
 })
