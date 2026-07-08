@@ -60,9 +60,12 @@ def nav_sidebar() -> str:
                         color: #F0EDE8; letter-spacing: -0.5px;">
                 MusicWorks™
             </div>
-            <div style="font-size: 10px; color: #8A8480; margin-top: 3px;
+            <div style="font-size: 10px; color: #D4A853; margin-top: 3px;
                         letter-spacing: 0.8px; text-transform: uppercase;">
-                by MindSpark Labs™
+                The Creative Agency Operating System™
+            </div>
+            <div style="font-size: 9px; color: #6A6460; margin-top: 2px; font-style: italic;">
+                Create the music. We'll build the movement.
             </div>
         </div>
         """, unsafe_allow_html=True)

@@ -9,7 +9,7 @@ from ui.styles import inject_styles
 from ui.components import nav_sidebar
 
 st.set_page_config(
-    page_title="MusicWorks™ by MindSpark Labs",
+    page_title="MusicWorks™ — The Creative Agency Operating System™",
     page_icon="🎵",
     layout="wide",
 )

@@ -934,32 +934,63 @@ def _save_song_json(d: dict, brand, theology_ok: bool, audio_ok: bool) -> bool:
         return False
 
 
+# Translates the orchestrator's internal, technical printer output into
+# department-framed lines a founder should actually see. Anything that
+# doesn't match a known real stage is not shown -- we never relay raw
+# agent/worker/queue language to the founder (V7 Constitution, Article IX),
+# and we never invent a stage that didn't really run (Article XIII).
+_BUILD_STAGE_MESSAGES = [
+    ("Brand Brain loaded",               "🧠", "Creative Director", "Your artist identity is understood."),
+    ("No Brand Brain found",             "🧠", "Creative Director", "Proceeding without a full artist profile."),
+    ("Social Media Agent running",       "📈", "Growth & Discovery", "Drafting your platform captions..."),
+    ("caption assets stored",            "📈", "Growth & Discovery", "Captions ready."),
+    ("Blog & Press Agent running",       "📈", "Growth & Discovery", "Writing your press release and blog..."),
+    ("written assets stored",            "📈", "Growth & Discovery", "Written package ready."),
+    ("Video Production Agent running",   "🎬", "Film Department", "Planning your cinematic sequence..."),
+    ("video package assets stored",      "🎬", "Film Department", "Storyboard ready."),
+    ("Thumbnail & Art Agent running",    "🎨", "Art Department", "Exploring visual concepts..."),
+    ("thumbnail assets stored",          "🎨", "Art Department", "Campaign artwork ready."),
+    ("Growth & Discovery Agent running", "📈", "Growth & Discovery", "Building your SEO & discovery strategy..."),
+    ("growth & discovery assets stored", "📈", "Growth & Discovery", "SEO package complete."),
+    ("Syncing assets to Production Queue", "🚀", "Campaign Operations", "Preparing your Media Blitz..."),
+    ("job(s) added to Asset Review",     "🚀", "Campaign Operations", "Awaiting your review."),
+]
+
+
+def _translate_build_message(raw_msg: str) -> str | None:
+    for substr, icon, dept, phrase in _BUILD_STAGE_MESSAGES:
+        if substr in raw_msg:
+            return f"{icon} {dept}: {phrase}"
+    return None
+
+
 def _run_campaign_build(d: dict, mock_mode: bool) -> str | None:
-    """Run the full campaign build with friendly, non-technical progress. Returns campaign_id or None."""
+    """Run the full campaign build, narrated as your creative team at work.
+    Returns campaign_id or None."""
     from contracts.models import SongInput
 
-    with st.status("Launching your Media Factory...", expanded=True) as status:
+    with st.status("Assembling your Creative Team...", expanded=True) as status:
         try:
-            status.write("🧠 Loading Artist Brain...")
+            status.write("🧠 Creative Director: reviewing your artist identity...")
             from brand_brain.brain_loader import load_context
             brand_context = "" if mock_mode else load_context(d.get("artist_id", ""))
             if mock_mode:
                 time.sleep(0.5)
-            status.write("✓ Artist Brain loaded")
+            status.write("✓ Artist identity understood")
 
-            status.write("🎵 Reading Song...")
+            status.write("🧠 Creative Director: reading your song...")
             song_data = json.loads(Path(d["song_file"]).read_text(encoding="utf-8"))
             song = SongInput.from_dict(song_data)
             if mock_mode:
                 time.sleep(0.4)
-            status.write(f"✓ Song loaded: {song.title}")
+            status.write(f"✓ Song understood: {song.title}")
 
-            status.write("📖 Analyzing Lyrics...")
+            status.write("🧠 Creative Director: studying the lyrics and scripture...")
             if mock_mode:
                 time.sleep(0.4)
-            status.write(f"✓ Scripture: {song.scripture_primary}")
+            status.write(f"✓ Scripture identified: {song.scripture_primary}")
 
-            status.write("🗺️ Building Campaign...")
+            status.write("🧠 Creative Director: preparing your Creative Brief...")
             mode = d.get("mode", "blitz")
             if mock_mode:
                 from agents.mock_data import get_campaign_plan
@@ -968,7 +999,7 @@ def _run_campaign_build(d: dict, mock_mode: bool) -> str | None:
             else:
                 import agents.campaign_agent as campaign_agent
                 plan = campaign_agent.run(song, mode, brand_context=brand_context)
-            status.write(f"✓ Campaign plan ready: {plan.campaign_name}")
+            status.write(f"✓ Creative Brief ready: {plan.campaign_name}")
 
             from execution import campaign_store
             media_campaign = campaign_store.create_campaign(
@@ -980,12 +1011,12 @@ def _run_campaign_build(d: dict, mock_mode: bool) -> str | None:
             )
             campaign_store.update_campaign_status(song.artist_id, media_campaign["campaign_id"], "building")
 
-            status.write("📅 Planning Media Calendar...")
+            status.write("🚀 Campaign Operations: mapping your campaign calendar...")
             if mock_mode:
                 time.sleep(0.3)
             status.write(f"✓ {len(plan.content_calendar)} calendar entries planned")
 
-            status.write("📋 Creating Production Queue...")
+            status.write("🚀 Campaign Operations: assembling your creative team...")
             from execution.asset_library import AssetLibrary
             from execution.orchestrator import RenderOrchestrator
 
@@ -993,23 +1024,23 @@ def _run_campaign_build(d: dict, mock_mode: bool) -> str | None:
             orchestrator = RenderOrchestrator(library, mock_mode=mock_mode)
             if mock_mode:
                 time.sleep(0.3)
-            status.write("✓ Production queue ready")
+            status.write("✓ Your creative team is in place")
 
-            status.write("🎨 Generating Assets...")
-            log_lines = []
+            seen_lines = set()
             def _printer(msg):
-                log_lines.append(msg)
-                if len(log_lines) % 2 == 0:
-                    status.write(f"   ↳ {msg}")
+                translated = _translate_build_message(msg)
+                if translated and translated not in seen_lines:
+                    seen_lines.add(translated)
+                    status.write(translated)
 
             assets = orchestrator.run_campaign(song, plan, printer=_printer)
-            status.write(f"✓ {len(assets)} assets generated")
+            status.write(f"✓ {len(assets)} campaign assets ready")
 
             campaign_store.update_campaign_status(song.artist_id, media_campaign["campaign_id"], "review")
             st.session_state.wizard_media_campaign_id = media_campaign["campaign_id"]
 
-            status.write("✅ Preparing Review...")
-            status.update(label="✅ Campaign Ready!", state="complete")
+            status.write("🚀 Campaign Operations: opening the Boardroom...")
+            status.update(label="✅ Your Creative Team Has Finished!", state="complete")
             return plan.campaign_id
 
         except Exception as e:
@@ -1018,19 +1049,83 @@ def _run_campaign_build(d: dict, mock_mode: bool) -> str | None:
             return None
 
 
+_OPERATIONS_STATUS_COPY = {
+    "draft":                  "Preparing to begin.",
+    "building":               "Still assembling the team.",
+    "review":                 "Awaiting your review.",
+    "approved":               "Assets approved — add your release links to continue.",
+    "waiting_for_distrokid":  "Waiting on your DistroKid release links.",
+    "ready_to_launch":        "Ready when you are.",
+    "live_blitz":             "Your Media Blitz is live.",
+    "paused":                 "Paused.",
+    "completed":              "Campaign completed.",
+    "relaunch_ready":         "Ready to relaunch or extend.",
+}
+
+
 def _render_campaign_ready(d: dict):
     campaign_id = st.session_state.wizard_campaign_id
+    artist_id = d.get("artist_id", "")
+    media_campaign_id = st.session_state.get("wizard_media_campaign_id", "")
 
     render_html(f"""
     <div style="background:linear-gradient(135deg, #0A2A1A, #0D3D20);
                 border:1px solid rgba(34,197,94,0.3); border-radius:16px;
-                padding:2.5rem; text-align:center; margin-bottom:2rem;">
-    <div style="font-size:48px; margin-bottom:0.75rem;">✅</div>
-    <div style="font-size:24px; font-weight:800; color:#F0EDE8; margin-bottom:0.5rem;">Campaign Ready!</div>
-    <div style="font-size:14px; color:#22C55E; margin-bottom:0.5rem;">{campaign_id}</div>
-    <div style="font-size:13px; color:#8A8480;">All assets have been generated and are waiting for your review.</div>
+                padding:2rem; text-align:center; margin-bottom:1.5rem;">
+    <div style="font-size:44px; margin-bottom:0.6rem;">✅</div>
+    <div style="font-size:22px; font-weight:800; color:#F0EDE8; margin-bottom:0.4rem;">Your Creative Team Has Finished</div>
+    <div style="font-size:13px; color:#8A8480;">Step into the Boardroom below to see what they built.</div>
     </div>
     """)
+
+    # ── The Creative Boardroom — real, honest department status ────────────────
+    if artist_id and media_campaign_id:
+        from execution import campaign_store
+        from execution.department_map import department_status
+
+        media_campaign = campaign_store.get_campaign(artist_id, media_campaign_id)
+        dept_rows = department_status(artist_id, media_campaign_id)
+
+        rows_html = (
+            '<div style="display:flex;align-items:center;justify-content:space-between;'
+            'padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.14);">'
+            '<span style="font-family:Georgia,serif;font-size:15px;color:#F0EDE8;">You<span style="display:block;'
+            'font-size:10px;letter-spacing:0.08em;text-transform:uppercase;color:#D4A853;margin-top:2px;">'
+            'Executive Producer</span></span><span style="font-size:13px;color:#C8BEEA;">Presiding</span></div>'
+        )
+
+        cd_name = media_campaign.get("campaign_name", "") if media_campaign else ""
+        rows_html += (
+            '<div style="display:flex;align-items:center;justify-content:space-between;'
+            'padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.14);">'
+            '<span style="font-family:Georgia,serif;font-size:15px;color:#F0EDE8;">🧠 Creative Director</span>'
+            f'<span style="font-size:13px;color:#C8BEEA;">Creative Brief ready — {cd_name}</span></div>'
+        )
+
+        for dept in dept_rows:
+            rows_html += (
+                '<div style="display:flex;align-items:center;justify-content:space-between;'
+                'padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.14);">'
+                f'<span style="font-family:Georgia,serif;font-size:15px;color:#F0EDE8;">{dept["icon"]} {dept["label"]}</span>'
+                f'<span style="font-size:13px;color:#C8BEEA;">{dept["status"]}</span></div>'
+            )
+
+        ops_status = media_campaign.get("status", "review") if media_campaign else "review"
+        ops_copy = _OPERATIONS_STATUS_COPY.get(ops_status, ops_status.replace("_", " ").title())
+        rows_html += (
+            '<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;">'
+            '<span style="font-family:Georgia,serif;font-size:15px;color:#F0EDE8;">🚀 Campaign Operations</span>'
+            f'<span style="font-size:13px;color:#C8BEEA;">{ops_copy}</span></div>'
+        )
+
+        render_html(f"""
+        <div style="background:linear-gradient(160deg, #2D1B69, #120B29);
+                    border-radius:14px; padding:1.5rem 1.75rem; margin-bottom:1.5rem;">
+        <div style="font-size:11px; letter-spacing:0.14em; text-transform:uppercase;
+                    color:#B7A9E6; margin-bottom:0.5rem;">The Creative Boardroom</div>
+        {rows_html}
+        </div>
+        """)
 
     st.caption(
         "Next: approve these assets, then release your music through DistroKid. "

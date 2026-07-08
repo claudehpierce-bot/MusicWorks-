@@ -169,7 +169,9 @@ def _v5_review(artist_id: str, all_jobs: list, gen_dir: Path):
             except Exception:
                 pass
 
-        if meta:
+        # Provider/mock detail is Studio Mode operator info -- founders should
+        # never see provider or worker language (V7 Constitution, Article IX).
+        if meta and st.session_state.get("studio_mode"):
             provider = meta.get("provider_used", "mock")
             is_mock  = meta.get("mock", False)
             mock_tag = ' <span style="background:#F59E0B22;color:#F59E0B;font-size:10px;padding:2px 7px;border-radius:10px;font-weight:600;">MOCK</span>' if is_mock else ""

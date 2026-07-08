@@ -135,14 +135,16 @@ def render():
     render_html(
         f'<div style="margin-bottom:2rem;">'
         f'<h1 style="margin:0 0 6px 0;font-size:2.2rem;">{greeting}, Founder! 👋</h1>'
-        f'<p style="color:#8A8480;font-size:16px;margin:0;">What would you like to do today?</p>'
+        f'<p style="color:#8A8480;font-size:16px;margin:0 0 4px;">What would you like to do today?</p>'
+        f'<p style="color:#D4A853;font-size:13px;margin:0;font-style:italic;">'
+        f'Create the music. We\'ll build the movement.</p>'
         f'</div>'
     )
 
     # ── Hero: Launch a Media Campaign (primary CTA) ───────────────────────────
     render_html(_action_card(
         "release", "🚀", "Launch a Media Campaign",
-        "Upload your Creative Master and MusicWorks builds the entire media "
+        "Upload your Creative Master and your Creative Team builds the entire "
         "campaign around it — videos, social posts, articles, and more."
     ))
     if st.button("🚀  Launch a Media Campaign", key="home_launch", type="primary", use_container_width=True):
