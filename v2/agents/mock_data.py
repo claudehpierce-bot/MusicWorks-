@@ -558,3 +558,194 @@ THUMBNAIL_OUTPUT = {
     ),
     "estimated_canva_time": "30–45 minutes",
 }
+
+
+# ── Growth & Discovery Agent ────────────────────────────────────────────────────
+
+GROWTH_CONTENT_OUTPUT = {
+    "website_copy": {
+        "heading": "HLANGANA — Kingdom Word #001",
+        "body": (
+            "HLANGANA is a Zulu word meaning \"gather together\" — and it's the first entry in "
+            "Kingdom Words, a series that recovers words from African, Caribbean, and global "
+            "languages that unlock scripture in ways English sometimes can't. Stream the song, "
+            "read the word study, and download the free 7-day devotional guide below."
+        ),
+    },
+    "artist_story": {
+        "content": (
+            "I didn't set out to write a song about a Zulu word. I set out to write about why so "
+            "many of us stopped gathering — why it became easier to livestream a sermon than sit "
+            "in a room with people who know our names. Then I found HLANGANA, and it named the "
+            "thing I couldn't. Not \"attend.\" Not \"show up.\" Gather — arrive with intention, be "
+            "known, be counted. Hebrews 10:25 isn't asking for our calendar. It's asking for our "
+            "presence. HLANGANA opens Becoming Vol. 1 because before you can become anything, you "
+            "have to be willing to become it in community. This song is my own reminder as much as "
+            "it's an invitation to anyone listening: come back to the room."
+        ),
+    },
+    "behind_song_article": {
+        "title": "The Making of HLANGANA: Finding a Word the English Bible Doesn't Have",
+        "content": (
+            "HLANGANA started as a voice memo, not a lyric — just the word, said out loud, over and "
+            "over, until the rhythm of it became the song's first hook. The production leans into "
+            "Amapiano's log-drum low end under a gospel choir stack, built to feel like a room "
+            "filling up rather than a track dropping. We tracked the choir in a single afternoon, "
+            "deliberately loose — call-and-response, not quantized — because gathering isn't "
+            "supposed to sound perfect. The bridge strips back to just voice and hand percussion, "
+            "the closest the record gets to what the word actually describes: people, together, "
+            "no production needed."
+        ),
+    },
+    "seo": {
+        "seo_title": "HLANGANA Meaning — Zulu Word for Gather Together | Fire & Flow Gospel",
+        "seo_description": (
+            "HLANGANA is a Zulu word meaning \"gather together,\" rooted in Hebrews 10:25. Stream "
+            "the song, read the word study, and download the free devotional guide."
+        ),
+        "seo_keywords": [
+            "HLANGANA meaning", "Zulu word gather together", "Hebrews 10:25 meaning",
+            "Afro-Gospel music", "Amapiano Gospel", "Fire & Flow Gospel", "Kingdom Words series",
+            "gospel devotional guide", "African gospel music 2026", "Becoming Vol 1 album",
+        ],
+    },
+    "hashtag_set": {
+        "core": ["#HLANGANA", "#KingdomWords", "#FireAndFlowGospel"],
+        "niche": ["#AfroGospel", "#AmapianoGospel", "#GospelMusic2026", "#ZuluWord"],
+        "community": ["#GatherTogether", "#ChurchFamily", "#DiasporaFaith", "#FaithCommunity"],
+    },
+    "playlist_pitch": {
+        "content": (
+            "HLANGANA is the debut single from Fire & Flow Gospel, an Afro-Gospel/Amapiano Gospel "
+            "project for the African and Caribbean diaspora. It opens on a spoken Zulu word — "
+            "\"HLANGANA,\" gather together — before dropping into a log-drum Amapiano groove under "
+            "a call-and-response gospel choir. It sits at the intersection of worship and Afrobeats "
+            "crossover, built for listeners who found Gospel through Amapiano, not the other way "
+            "around. Runtime 3:24, clean radio edit available."
+        ),
+    },
+    "playlist_target_notes": {
+        "content": (
+            "Best fit: Gospel/Amapiano crossover playlists, African diaspora worship playlists, and "
+            "Sunday-morning devotional playlists that already mix English and vernacular-language "
+            "tracks. Tempo and low-end make it a plausible add to secular Amapiano playlists open to "
+            "a gospel crossover moment — lead with the groove, not the scripture reference, in that "
+            "pitch context."
+        ),
+    },
+    "genre_positioning": {
+        "content": (
+            "HLANGANA sits at the intersection of traditional Gospel choir arrangement and Amapiano "
+            "production — log-drum bass, piano stabs, and call-and-response vocals over a 4-on-the-"
+            "floor groove. It's closer to the Amapiano-Gospel crossover lane than to Contemporary "
+            "Christian or traditional Gospel proper."
+        ),
+    },
+    "similar_artist_notes": {
+        "content": (
+            "Neyi Zimu — shares the Amapiano-meets-worship production palette. "
+            "Blaqbonez ft. gospel choir collaborations — similar crossover-audience strategy. "
+            "Sinach — comparable devotional lyric depth, different (more Western) production lane. "
+            "Tribl / Maverick City Music — comparable communal, call-and-response vocal arrangement."
+        ),
+    },
+    "discovery_copy": {
+        "content": (
+            "A Zulu word for \"gather together\" becomes a log-drum Gospel anthem. Fire & Flow "
+            "Gospel opens Becoming Vol. 1 with HLANGANA, the first entry in a series recovering "
+            "African-language words that unlock scripture."
+        ),
+    },
+    "artist_bio_short": {
+        "content": (
+            "Fire & Flow Gospel is an independent Afro-Gospel/Amapiano Gospel project for the "
+            "African and Caribbean diaspora. Debut album: Becoming Vol. 1 (2026)."
+        ),
+    },
+    "artist_bio_long": {
+        "content": (
+            "Fire & Flow Gospel is the sound of the African and Caribbean diaspora encountering the "
+            "living God — Afro-Gospel and Amapiano production built around scripture-anchored "
+            "songwriting. The project's debut album, Becoming Vol. 1, explores the journey of "
+            "becoming who God made you to be, in community and through surrender. Its lead single, "
+            "HLANGANA, opens the Kingdom Words series: a body of work that recovers words from "
+            "African, Caribbean, and global languages carrying theological weight the English Bible "
+            "doesn't fully capture. Fire & Flow Gospel is a project of MindSpark MusicWorks™, built "
+            "to help independent gospel artists take their music from concept to campaign with "
+            "integrity and excellence."
+        ),
+    },
+    "x_post": {
+        "content": (
+            "HLANGANA is a Zulu word for \"gather together.\" It's also Hebrews 10:25. "
+            "Out now — first single from Becoming Vol. 1. 🎵 [STREAMING_LINK]"
+        ),
+    },
+    "threads_post": {
+        "content": (
+            "Been sitting with this word for months: HLANGANA. Zulu for \"gather together.\" "
+            "It's Hebrews 10:25 in one word. That's the whole song. Out now — link in bio."
+        ),
+    },
+    "rumble_description": {
+        "content": (
+            "HLANGANA — Kingdom Word #001. A Zulu word meaning \"gather together,\" rooted in "
+            "Hebrews 10:25. First single from Becoming Vol. 1 by Fire & Flow Gospel. Free 7-day "
+            "devotional guide: [DEVOTIONAL_LINK]. Stream everywhere: [STREAMING_LINK]."
+        ),
+    },
+    "community_post": {
+        "content": (
+            "Family — HLANGANA is officially out! This one means a lot: it's a Zulu word for "
+            "\"gather together,\" and it's basically Hebrews 10:25 set to music. If you've been "
+            "part of this journey with us, thank you. Stream it, share it with someone who needs "
+            "to hear it, and grab the free devotional guide if you want to go deeper. 🙏"
+        ),
+    },
+    "countdown_graphic": {
+        "description": (
+            "Deep indigo background, large gold countdown number center frame, 'HLANGANA drops in' "
+            "above it, release date below. Same brand system as the thumbnail concepts."
+        ),
+        "canva_instructions": (
+            "1. Canva → Custom size → 1080x1080 (feed) or 1080x1920 (story)\n"
+            "2. Background: solid #2D1B69\n"
+            "3. Large text: countdown number (e.g. '3') → Montserrat ExtraBold → Size 200 → Color #D4A853 → centered\n"
+            "4. Above it: 'HLANGANA drops in' → Montserrat Regular → Size 40 → Color #FFFFFF\n"
+            "5. Below it: 'DAYS' + release date → Montserrat Regular → Size 30 → Color #FFFFFF\n"
+            "6. Footer: 'Fire & Flow Gospel' → Size 22 → Color #D4A853\n"
+            "Estimated time: 10 minutes per day of countdown using the template."
+        ),
+    },
+    "release_announcement_graphic": {
+        "description": (
+            "Same brand system, 'OUT NOW' badge replaces the countdown number, streaming link CTA "
+            "at the bottom."
+        ),
+        "canva_instructions": (
+            "1. Duplicate the countdown template\n"
+            "2. Replace countdown number with 'OUT NOW' badge → rounded rectangle, #D4A853 fill, #1A0F42 text\n"
+            "3. Headline: 'HLANGANA' → Montserrat ExtraBold → Size 120 → Color #D4A853\n"
+            "4. Subtext: 'Stream now — link in bio' → Size 30 → Color #FFFFFF\n"
+            "5. Download PNG at 2x resolution\n"
+            "Estimated time: 10 minutes."
+        ),
+    },
+    "campaign_poster": {
+        "description": (
+            "Print-friendly poster for church bulletins/lobby screens — portrait, high contrast, "
+            "readable from a distance, QR code space reserved bottom right."
+        ),
+        "canva_instructions": (
+            "1. Canva → Custom size → 8.5x11in (print) or 1080x1350 (digital)\n"
+            "2. Background: solid #2D1B69, full bleed\n"
+            "3. Headline: 'HLANGANA' → Montserrat ExtraBold → Size 140 → Color #D4A853 → upper third\n"
+            "4. Subtext: 'Gather Together — Hebrews 10:25' → Size 36 → Color #FFFFFF\n"
+            "5. 'Fire & Flow Gospel — Becoming Vol. 1' → Size 28 → Color #FFFFFF → lower third\n"
+            "6. Reserve bottom-right 15% for a QR code linking to the streaming link (add after export "
+            "via a free QR generator, then re-import as an image element)\n"
+            "7. For print: Download as PDF Print, CMYK color profile\n"
+            "Estimated time: 20 minutes."
+        ),
+    },
+}

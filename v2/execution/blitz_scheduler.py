@@ -54,6 +54,7 @@ def _platform_matches(job: dict, platforms: list[str]) -> bool:
         "x":         "X",
         "rumble":    "Rumble",
         "website":   "Website",
+        "threads":   "Threads",
     }
     label = label_by_platform.get(platform)
     return bool(label) and label in platforms

@@ -41,10 +41,36 @@ JOB_TYPES = [
     ("church_outreach", "Church Outreach",       "⛪", "claude",     "email"),
     ("post_launch",     "Post-Launch Post",      "🚀", "claude",     "all"),
 
+    # ── Growth & Discovery writing (Claude) — website/SEO/bio/pitch copy ───────
+    ("website_copy",         "Website Copy",             "🌐", "claude", "website"),
+    ("artist_story",         "Artist Story",             "📖", "claude", "website"),
+    ("behind_song_article",  "Behind the Song Article",  "🎼", "claude", "website"),
+    ("seo_title",            "SEO Title",                "🔍", "claude", "website"),
+    ("seo_description",     "SEO Description",           "🔍", "claude", "website"),
+    ("seo_keywords",         "SEO Keywords",              "🔑", "claude", "website"),
+    ("hashtag_set",          "Hashtag Set",               "#️⃣", "claude", "all"),
+    ("playlist_pitch",       "Playlist Pitch Copy",       "🎧", "claude", "spotify"),
+    ("playlist_target_notes", "Playlist Target Notes",   "🎯", "claude", "spotify"),
+    ("genre_positioning",    "Genre Positioning",         "🎼", "claude", "all"),
+    ("similar_artist_notes", "Similar Artist Notes",      "🎤", "claude", "all"),
+    ("discovery_copy",       "Music Discovery Copy",      "🔎", "claude", "all"),
+    ("artist_bio_short",     "Short Artist Bio",          "👤", "claude", "all"),
+    ("artist_bio_long",      "Long Artist Bio",           "📝", "claude", "all"),
+
+    # ── Growth & Discovery social text (Claude) — distinct from the video
+    # job types above that share the same platform names ─────────────────────
+    ("x_post",              "X Post",                    "✖️", "claude", "x"),
+    ("threads_post",        "Threads Post",              "🧵", "claude", "threads"),
+    ("rumble_description",  "Rumble Description",        "🔴", "claude", "rumble"),
+    ("community_post",      "Community Post",            "💬", "claude", "all"),
+
     # ── Graphics (Canva / Leonardo) ─────────────────────────────────────────────
     ("quote_card",      "Quote Card",            "💬", "canva",      "all"),
     ("story_slides",    "Story Slides",          "📲", "canva",      "instagram"),
     ("thumbnail_set",   "Thumbnail Set",         "🖼️", "canva",      "youtube"),
+    ("countdown_graphic",             "Countdown Graphic",              "⏳", "canva", "instagram"),
+    ("release_announcement_graphic",  "Release Announcement Graphic",   "📢", "canva", "all"),
+    ("campaign_poster",               "Campaign Poster",                "🖼️", "canva", "all"),
 ]
 
 JOB_STATUSES = [
