@@ -100,6 +100,7 @@ def create_job(
     notes: str = "",
     priority: int = 5,
     prompt: str = "",
+    campaign_id: str = "",
 ) -> dict:
     meta = JOB_TYPE_META.get(job_type, {})
     job_id = str(uuid.uuid4())[:8]
@@ -107,6 +108,7 @@ def create_job(
     job = {
         "job_id":        job_id,
         "artist_id":     artist_id,
+        "campaign_id":   campaign_id,
         "song_id":       song_id,
         "song_title":    song_title,
         "release_date":  release_date,
@@ -183,7 +185,12 @@ def delete_job(artist_id: str, job_id: str) -> bool:
     return False
 
 
-def list_jobs(artist_id: str, status: str | None = None, phase: str | None = None) -> list[dict]:
+def list_jobs(
+    artist_id: str,
+    status: str | None = None,
+    phase: str | None = None,
+    campaign_id: str | None = None,
+) -> list[dict]:
     d = _artist_dir(artist_id)
     jobs = []
     for f in sorted(d.glob("*.json")):
@@ -193,14 +200,16 @@ def list_jobs(artist_id: str, status: str | None = None, phase: str | None = Non
                 continue
             if phase and job.get("phase") != phase:
                 continue
+            if campaign_id and job.get("campaign_id") != campaign_id:
+                continue
             jobs.append(job)
         except Exception:
             continue
     return sorted(jobs, key=lambda j: (j.get("priority", 5), j.get("scheduled_date", "")))
 
 
-def queue_stats(artist_id: str) -> dict:
-    jobs = list_jobs(artist_id)
+def queue_stats(artist_id: str, campaign_id: str | None = None) -> dict:
+    jobs = list_jobs(artist_id, campaign_id=campaign_id)
     stats: dict[str, int] = {}
     for _, lbl, _ in JOB_STATUSES:
         pass

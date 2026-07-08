@@ -970,6 +970,16 @@ def _run_campaign_build(d: dict, mock_mode: bool) -> str | None:
                 plan = campaign_agent.run(song, mode, brand_context=brand_context)
             status.write(f"✓ Campaign plan ready: {plan.campaign_name}")
 
+            from execution import campaign_store
+            media_campaign = campaign_store.create_campaign(
+                artist_id=song.artist_id,
+                song_id=song.song_id,
+                song_title=song.title,
+                campaign_name=plan.campaign_name,
+                campaign_mode=mode,
+            )
+            campaign_store.update_campaign_status(song.artist_id, media_campaign["campaign_id"], "building")
+
             status.write("📅 Planning Media Calendar...")
             if mock_mode:
                 time.sleep(0.3)
@@ -995,6 +1005,9 @@ def _run_campaign_build(d: dict, mock_mode: bool) -> str | None:
             assets = orchestrator.run_campaign(song, plan, printer=_printer)
             status.write(f"✓ {len(assets)} assets generated")
 
+            campaign_store.update_campaign_status(song.artist_id, media_campaign["campaign_id"], "review")
+            st.session_state.wizard_media_campaign_id = media_campaign["campaign_id"]
+
             status.write("✅ Preparing Review...")
             status.update(label="✅ Campaign Ready!", state="complete")
             return plan.campaign_id
@@ -1019,17 +1032,27 @@ def _render_campaign_ready(d: dict):
     </div>
     """)
 
-    col_a, col_b, col_c = st.columns(3)
+    st.caption(
+        "Next: approve these assets, then release your music through DistroKid. "
+        "Once you have your release links, the Media Blitz Control Center lets you "
+        "schedule and launch the media campaign."
+    )
+
+    col_a, col_b, col_c, col_d = st.columns(4)
     with col_a:
         if st.button("✅  Open Approval Queue", type="primary", use_container_width=True):
             st.session_state.approval_campaign_id = campaign_id
             st.session_state.pop("wizard_campaign_id", None)
             navigate_to("approval")
     with col_b:
+        if st.button("🎯  Media Blitz Control Center", use_container_width=True):
+            st.session_state.pop("wizard_campaign_id", None)
+            navigate_to("media_blitz")
+    with col_c:
         if st.button("📦  View All Campaigns", use_container_width=True):
             st.session_state.pop("wizard_campaign_id", None)
             navigate_to("campaigns")
-    with col_c:
+    with col_d:
         if st.button("➕  New Project", use_container_width=True):
             st.session_state.wizard_step = 0
             st.session_state.wizard_data = {}

@@ -5,6 +5,7 @@ from pathlib import Path
 from contracts.models import SongInput, CampaignPlan
 from execution.asset_library import AssetLibrary
 from execution import production_queue
+from execution.campaign_store import make_campaign_id
 from brand_brain.brain_loader import load_context
 import agents.social_media_agent as social_agent
 import agents.blog_press_agent as blog_agent
@@ -154,6 +155,11 @@ class RenderOrchestrator:
         out_dir = GEN_DIR / song.artist_id
         out_dir.mkdir(parents=True, exist_ok=True)
 
+        # Deterministic per-song id (not CampaignPlan.campaign_id, which is
+        # LLM-generated and not guaranteed unique) — links jobs to the
+        # persisted Campaign record used by the Media Blitz Control Center.
+        campaign_id = make_campaign_id(song.song_id)
+
         for record in assets:
             job_type = ASSET_TYPE_TO_JOB_TYPE.get(record.asset_type, DEFAULT_JOB_TYPE)
             job = production_queue.create_job(
@@ -165,6 +171,7 @@ class RenderOrchestrator:
                 phase="launch",
                 notes=record.asset_description,
                 prompt=campaign.campaign_name,
+                campaign_id=campaign_id,
             )
             jid = job["job_id"]
             production_queue.add_output_file(song.artist_id, jid, record.file_path, label=record.file_name)

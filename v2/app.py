@@ -79,6 +79,9 @@ elif page == "approval":
 elif page == "publishing":
     from ui.pages.publishing import render
     render()
+elif page == "media_blitz":
+    from ui.pages.media_blitz import render
+    render()
 elif page == "analytics":
     from ui.pages.analytics import render
     render()
