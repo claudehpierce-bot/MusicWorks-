@@ -20,6 +20,7 @@ from execution.campaign_store import STATUS_LABELS, CAMPAIGN_TYPES, CAMPAIGN_TYP
 from execution.blitz_scheduler import PLATFORM_OPTIONS, launch_blitz, extend_blitz, reset_schedule, pull_back_job
 from execution.production_queue import list_jobs, queue_stats, update_job_status
 from execution.distrokid_store import get_release, upsert_release
+from execution.campaign_health import compute_health
 
 _STATUS_COLORS = {
     "draft": "#6A6460", "building": "#9B89D4", "review": "#3B82F6",
@@ -99,6 +100,52 @@ def render():
     m2.metric("In Review", stats["review"])
     m3.metric("Approved Assets", stats["approved"])
     m4.metric("Scheduled", stats["scheduled"])
+
+    # ── Campaign Health (V7 Phase 4) — real computed signals, never a
+    # prediction. There is no live publishing/analytics integration in this
+    # product, so nothing here is "adaptive" -- it's arithmetic over what
+    # actually happened in this campaign so far. ─────────────────────────────
+    render_html('<div class="mw-section-label" style="margin-top:1.5rem;">Campaign Health</div>')
+    health = compute_health(artist_id, campaign_id)
+    if health["total_assets"] == 0:
+        st.caption("No assets yet.")
+    else:
+        h1, h2, h3 = st.columns(3)
+        with h1:
+            rate = health["approval_rate"]
+            st.metric("Approval Rate", f"{rate}%" if rate is not None else "—")
+        with h2:
+            avg = health["avg_rating"]
+            st.metric("Avg. Review Score", f"{avg}/5" if avg is not None else "Not reviewed yet")
+        with h3:
+            st.metric("Needed a Redo", health["regenerated_count"])
+
+        if health["worst_rating"] is not None and health["worst_rating"] < 5:
+            from execution.brief_dependencies import REGEN_GROUPS
+            target_label = REGEN_GROUPS.get(health["worst_target"], {}).get("label", health["worst_target"])
+            st.info(f"📋 Lowest-scoring review — **{target_label}**: {health['worst_verdict']}")
+
+        if health["oldest_review_days"] and health["oldest_review_days"] >= 3:
+            st.warning(f"⏳ Some assets have been waiting for your review for {health['oldest_review_days']}+ days.")
+
+    # ── Lessons From Past Campaigns (V7 Phase 3 data, surfaced here for the
+    # first time) — real history from Brand Brain, honestly empty if this is
+    # the artist's first campaign. ────────────────────────────────────────────
+    from brand_brain.artist_library import load_artist
+    brain = load_artist(artist_id)
+    past = [m for m in (brain.campaign_history if brain else []) if m.campaign_id != campaign_id]
+    if past:
+        with st.expander(f"📚 Lessons From Past Campaigns ({len(past)})", expanded=False):
+            for mem in reversed(past[-5:]):
+                st.markdown(f"**{mem.song_title}** — {mem.date[:10] if mem.date else ''}")
+                if mem.recommendations:
+                    for rec in mem.recommendations:
+                        st.caption(f"• {rec}")
+                elif mem.lessons_learned:
+                    for lesson in mem.lessons_learned:
+                        st.caption(f"• {lesson}")
+                else:
+                    st.caption("No issues flagged — every department matched the Brief.")
 
     if status in ("live_blitz", "paused"):
         attention = [j for j in jobs if j.get("status") in ("pending", "review")]
