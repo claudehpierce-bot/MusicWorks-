@@ -1108,11 +1108,17 @@ def _render_campaign_ready(d: dict):
         )
 
         for dept in dept_rows:
+            if dept.get("rating"):
+                stars = "★" * dept["rating"] + "☆" * (5 - dept["rating"])
+                note = dept.get("verdict") or dept["status"]
+                note_html = f'<span style="font-family:ui-monospace,monospace;color:#D4A853;letter-spacing:0.06em;">{stars}</span> <span style="font-size:12px;color:#C8BEEA;">{note}</span>'
+            else:
+                note_html = f'<span style="font-size:13px;color:#C8BEEA;">{dept["status"]}</span>'
             rows_html += (
                 '<div style="display:flex;align-items:center;justify-content:space-between;'
-                'padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.14);">'
-                f'<span style="font-family:Georgia,serif;font-size:15px;color:#F0EDE8;">{dept["icon"]} {dept["label"]}</span>'
-                f'<span style="font-size:13px;color:#C8BEEA;">{dept["status"]}</span></div>'
+                'padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.14);gap:1rem;">'
+                f'<span style="font-family:Georgia,serif;font-size:15px;color:#F0EDE8;white-space:nowrap;">{dept["icon"]} {dept["label"]}</span>'
+                f'<span style="text-align:right;">{note_html}</span></div>'
             )
 
         ops_status = media_campaign.get("status", "review") if media_campaign else "review"

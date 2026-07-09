@@ -21,6 +21,19 @@ DEPARTMENT_META = {
     "growth":           {"label": "Growth & Discovery",   "icon": "📈"},
 }
 
+# Bridges this module's 4 Boardroom-display keys to
+# execution/brief_dependencies.py's 5 REGEN_GROUPS keys, which is where
+# Phase 2's cross-department reviews actually attach (review granularity
+# matches the 5 real content agents, not the 4-department display grouping —
+# see brief_dependencies.py's own docstring for why). "growth" absorbs 3
+# regen groups here for the same reason it absorbs 3 agents' job_types above.
+DEPARTMENT_REGEN_GROUPS = {
+    "art":              ["artwork"],
+    "film":              ["video"],
+    "artist_relations": [],
+    "growth":            ["captions", "written", "growth"],
+}
+
 JOB_TYPE_DEPARTMENT = {
     # Film Department — cinematic / long-form video
     "music_video": "film", "trailer": "film", "lyric_visualizer": "film",
@@ -55,11 +68,33 @@ JOB_TYPE_DEPARTMENT = {
 }
 
 
+def department_rating(artist_id: str, campaign_id: str, department: str) -> dict | None:
+    """Real cross-department review rating for a Boardroom row (V7 Phase 2),
+    aggregated across whichever of this department's underlying regen groups
+    have been reviewed so far. Minimum-wins, not an average -- if any part
+    of a department's work needs attention, the Boardroom surfaces that,
+    not a blurred-together score. Returns None (never a fabricated rating)
+    if nothing has been reviewed for this department yet."""
+    from execution import review_store
+
+    groups = DEPARTMENT_REGEN_GROUPS.get(department, [])
+    if not groups:
+        return None
+
+    all_reviews = review_store.get_reviews(artist_id, campaign_id)
+    relevant = [r for r in all_reviews.values() if r["target"] in groups]
+    if not relevant:
+        return None
+
+    worst = min(relevant, key=lambda r: r["rating"])
+    return {"rating": worst["rating"], "verdict": worst["verdict"], "reviewer": worst["reviewer"]}
+
+
 def department_status(artist_id: str, campaign_id: str) -> list[dict]:
-    """Real, honest per-department status for a campaign -- no fabricated
-    ratings or quality judgments (none exist yet; see the Constitution,
-    Article XIII). Just what actually got made, and whether it's still
-    in progress or ready to look at."""
+    """Real, honest per-department status for a campaign. Includes a real
+    cross-department rating where Phase 2 review data exists for it;
+    `rating`/`verdict` are None rather than fabricated when it doesn't
+    (e.g. Artist Relations, or before the first review has run)."""
     jobs = list_jobs(artist_id, campaign_id=campaign_id)
 
     counts = {d: {"total": 0, "unresolved": 0} for d in DEPARTMENTS}
@@ -82,8 +117,11 @@ def department_status(artist_id: str, campaign_id: str) -> list[dict]:
             status = "Still in progress"
         else:
             status = f"{total} piece{'s' if total != 1 else ''} ready for your review"
+        rating_info = department_rating(artist_id, campaign_id, dept) if total > 0 else None
         result.append({
             "key": dept, "label": meta["label"], "icon": meta["icon"],
             "count": total, "status": status,
+            "rating": rating_info["rating"] if rating_info else None,
+            "verdict": rating_info["verdict"] if rating_info else None,
         })
     return result

@@ -22,6 +22,30 @@ REGEN_GROUPS = {
     "growth":   {"agent": "growth_content_agent",   "label": "Growth & SEO Package",  "icon": "📈"},
 }
 
+# Which job_types actually belong to each REGEN_GROUPS key. Public (not just
+# an orchestrator implementation detail) because Phase 2's review re-trigger
+# needs to map a job back to its regen group from ui/pages/approval.py too.
+REGEN_GROUP_JOB_TYPES = {
+    "captions": ["instagram_reel", "tiktok", "youtube_short", "facebook_reel"],
+    "written":  ["blog", "press_release", "church_outreach"],
+    "video":    ["cinematic_scenes"],
+    "artwork":  ["thumbnail_set"],
+    "growth": [
+        "website_copy", "artist_story", "behind_song_article", "seo_title",
+        "seo_description", "seo_keywords", "hashtag_set", "playlist_pitch",
+        "playlist_target_notes", "genre_positioning", "similar_artist_notes",
+        "discovery_copy", "artist_bio_short", "artist_bio_long", "x_post",
+        "threads_post", "rumble_description", "community_post",
+        "countdown_graphic", "release_announcement_graphic", "campaign_poster",
+    ],
+}
+
+_JOB_TYPE_TO_GROUP = {jt: g for g, jts in REGEN_GROUP_JOB_TYPES.items() for jt in jts}
+
+
+def job_type_to_regen_group(job_type: str) -> str | None:
+    return _JOB_TYPE_TO_GROUP.get(job_type)
+
 # Curated by hand, not inferred — a founder should be able to predict what
 # regenerating will touch. campaign_duration/publishing_priority map to
 # nothing here: they're Campaign Operations' scheduling concerns, not

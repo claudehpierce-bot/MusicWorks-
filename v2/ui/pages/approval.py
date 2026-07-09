@@ -306,6 +306,23 @@ def _v5_review(artist_id: str, all_jobs: list, gen_dir: Path):
                     if st.button("Yes, Replace It", key=f"v5a_confirm_{jid}", type="primary", use_container_width=True):
                         update_job_status(artist_id, jid, "approved")
                         update_job_status(artist_id, alt_target_id, "superseded")
+                        # The live content for this group just genuinely
+                        # changed -- this is the actual trigger for a
+                        # re-review, not the regeneration that created the
+                        # alternative (V7 Phase 2 design).
+                        from execution.brief_dependencies import job_type_to_regen_group
+                        target_group = job_type_to_regen_group(job.get("job_type"))
+                        campaign_id = job.get("campaign_id", "")
+                        if target_group and campaign_id:
+                            from execution.asset_library import AssetLibrary
+                            from execution.orchestrator import RenderOrchestrator
+                            try:
+                                from config import ANTHROPIC_API_KEY
+                                mock_mode = not bool(ANTHROPIC_API_KEY)
+                            except ImportError:
+                                mock_mode = True
+                            orchestrator = RenderOrchestrator(AssetLibrary(), mock_mode=mock_mode)
+                            orchestrator.review_group(artist_id, campaign_id, target_group, printer=lambda *a: None)
                         st.session_state.pop(confirm_key, None)
                         st.session_state.v5_review_idx = min(idx + 1, total - 1)
                         st.success("Approved — previous version retired, not deleted.")
