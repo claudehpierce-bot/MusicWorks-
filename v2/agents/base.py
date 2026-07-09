@@ -7,6 +7,28 @@ from config import ANTHROPIC_API_KEY, CLAUDE_MODEL
 _client = None
 
 
+def format_brief_section(brief: dict | None, fields: list[str]) -> str:
+    """Renders the subset of Live Creative Brief fields a given department
+    actually consumes (per execution/brief_dependencies.py) as a labeled
+    prompt block. Every department reads from the SAME Brief -- this is the
+    one shared formatter every agent calls, so no agent ever forms its own
+    independent interpretation of a field's meaning (V7 Constitution,
+    Amendment I, Principle 1). Returns "" when no brief is available yet,
+    so existing callers that don't pass one see no behavior change."""
+    if not brief:
+        return ""
+    from execution.brief_store import FIELD_LABELS
+
+    lines = []
+    for field in fields:
+        value = (brief.get(field) or "").strip()
+        if value:
+            lines.append(f"- {FIELD_LABELS.get(field, field)}: {value}")
+    if not lines:
+        return ""
+    return "LIVE CREATIVE BRIEF (the single source of creative truth for this campaign -- follow it, don't reinterpret it):\n" + "\n".join(lines)
+
+
 def get_client() -> Anthropic:
     global _client
     if _client is None:

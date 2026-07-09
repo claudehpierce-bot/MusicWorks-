@@ -1,7 +1,7 @@
 """Social Media Agent — produces captions for all platforms."""
 import json
 from contracts.models import SongInput, CampaignPlan
-from agents.base import call_claude
+from agents.base import call_claude, format_brief_section
 
 SYSTEM_PROMPT = """You are the Social Media Agent for MindSpark MusicWorks™.
 
@@ -61,7 +61,15 @@ RETURN ONLY A VALID JSON OBJECT. No other text. No markdown fences.
 }"""
 
 
-def run(song: SongInput, campaign: CampaignPlan, brand_context: str = "") -> dict:
+_BRIEF_FIELDS = [
+    "campaign_theme", "scripture_emphasis", "campaign_title", "core_message",
+    "call_to_action", "tagline", "target_audience", "platform_strategy",
+    "emotion", "hashtags",
+]
+
+
+def run(song: SongInput, campaign: CampaignPlan, brand_context: str = "", brief: dict = None) -> dict:
+    brief_section = format_brief_section(brief, _BRIEF_FIELDS)
     user_message = f"""Generate complete social media captions for this song and campaign.
 
 SONG:
@@ -71,6 +79,8 @@ CAMPAIGN:
 Mode: {campaign.campaign_mode}
 Goal: {campaign.campaign_goal}
 Ministry angle: {campaign.ministry_angle}
+
+{brief_section}
 
 Write every caption in full. No placeholders except for [STREAMING_LINK] and [DEVOTIONAL_LINK]
 which will be replaced with live URLs at publishing time.

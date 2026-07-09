@@ -153,6 +153,39 @@ def _v5_review(artist_id: str, all_jobs: list, gen_dir: Path):
             f'</div>'
         )
 
+        # ── Alternatives (V7 Constitution, Amendment I) ─────────────────────────
+        # Regeneration never touches an existing job -- it creates a linked
+        # alternative instead. Surface that link both directions: an asset
+        # with alternatives pointing at it, and an asset that IS one.
+        from execution.production_queue import get_job as _get_job
+
+        alt_target_id = job.get("alternative_of", "")
+        alt_target = _get_job(artist_id, alt_target_id) if alt_target_id else None
+        alternatives_of_this = [j for j in all_jobs if j.get("alternative_of") == jid]
+
+        if alternatives_of_this:
+            st.info(f"🔄 {len(alternatives_of_this)} new alternative(s) available for this asset — regenerated from your Live Creative Brief.")
+            for alt in alternatives_of_this:
+                if st.button(f"Compare with alternative ({alt.get('status','review')})", key=f"v5_gotoalt_{jid}_{alt['job_id']}", use_container_width=True):
+                    match = next((i for i, j in enumerate(filtered) if j["job_id"] == alt["job_id"]), None)
+                    if match is not None:
+                        st.session_state.v5_review_idx = match
+                    else:
+                        st.session_state.v5_filter = "all"
+                        st.session_state.v5_review_idx = 0
+                    st.rerun()
+
+        if alt_target:
+            target_file = gen_dir / f"{alt_target_id}.md"
+            target_content = target_file.read_text(encoding="utf-8") if target_file.exists() else "(no content)"
+            st.markdown(f"**🔄 New alternative** — comparing against your current **{alt_target.get('status','').title()}** version:")
+            with st.expander(f"Current ({alt_target.get('status','').title()}) — {alt_target.get('job_label','')}", expanded=False):
+                st.markdown(
+                    f'<div style="font-size:12px;color:#8A8480;white-space:pre-wrap;max-height:220px;overflow-y:auto;">{target_content[:2000]}</div>',
+                    unsafe_allow_html=True,
+                )
+            st.caption("New Alternative ⬇")
+
         render_html(
             f'<div class="mw-asset-preview">'
             f'<div style="font-size:11px;color:#8A8480;text-transform:uppercase;letter-spacing:0.6px;margin-bottom:0.4rem;">{phase}</div>'
@@ -255,11 +288,43 @@ def _v5_review(artist_id: str, all_jobs: list, gen_dir: Path):
         # ── Action buttons ────────────────────────────────────────────────────
         if status == "review":
             st.markdown("<div style='height:0.75rem;'></div>", unsafe_allow_html=True)
+
+            # Approving an alternative whose target already went somewhere
+            # meaningful (approved/scheduled/published) requires an explicit,
+            # separate confirmation -- it is never automatic (Amendment I,
+            # Principle 7). The target is retired to "superseded", never deleted.
+            needs_supersede_confirm = bool(alt_target) and alt_target.get("status") in ("approved", "scheduled", "published")
+            confirm_key = f"v5_supersede_confirm_{jid}"
+
+            if needs_supersede_confirm and st.session_state.get(confirm_key):
+                st.warning(
+                    f"Approving this will retire your previously {alt_target.get('status')} version — "
+                    "it's kept as history, not deleted."
+                )
+                cc1, cc2 = st.columns(2)
+                with cc1:
+                    if st.button("Yes, Replace It", key=f"v5a_confirm_{jid}", type="primary", use_container_width=True):
+                        update_job_status(artist_id, jid, "approved")
+                        update_job_status(artist_id, alt_target_id, "superseded")
+                        st.session_state.pop(confirm_key, None)
+                        st.session_state.v5_review_idx = min(idx + 1, total - 1)
+                        st.success("Approved — previous version retired, not deleted.")
+                        st.rerun()
+                with cc2:
+                    if st.button("Cancel", key=f"v5a_cancel_{jid}", use_container_width=True):
+                        st.session_state.pop(confirm_key, None)
+                        st.rerun()
+                st.markdown("<div style='height:0.5rem;'></div>", unsafe_allow_html=True)
+
             ba, bb, bc, bd = st.columns(4)
             with ba:
                 if quote_pending:
                     st.button("✓ Approve", key=f"v5a_{jid}", disabled=True,
                               help="Save your personal quote first.", use_container_width=True)
+                elif needs_supersede_confirm:
+                    if st.button("✓ Approve (Replaces Current)", key=f"v5a_{jid}", type="primary", use_container_width=True):
+                        st.session_state[confirm_key] = True
+                        st.rerun()
                 elif st.button("✓ Approve", key=f"v5a_{jid}", type="primary", use_container_width=True):
                     update_job_status(artist_id, jid, "approved")
                     st.session_state.v5_review_idx = min(idx + 1, total - 1)

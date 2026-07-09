@@ -4,7 +4,7 @@ X/Threads/Rumble/community text posts, and Canva instructions for the
 countdown, release-announcement, and campaign-poster graphics."""
 import json
 from contracts.models import SongInput, CampaignPlan
-from agents.base import call_claude
+from agents.base import call_claude, format_brief_section
 
 SYSTEM_PROMPT = """You are the Growth & Discovery Agent for MindSpark MusicWorks™.
 
@@ -80,7 +80,15 @@ RETURN ONLY A VALID JSON OBJECT. No other text. No markdown fences.
 }"""
 
 
-def run(song: SongInput, campaign: CampaignPlan, brand_context: str = "") -> dict:
+_BRIEF_FIELDS = [
+    "campaign_theme", "scripture_emphasis", "campaign_title", "core_message",
+    "call_to_action", "target_audience", "campaign_goals", "artist_narrative",
+    "platform_strategy", "keywords", "seo", "hashtags", "playlist_direction",
+]
+
+
+def run(song: SongInput, campaign: CampaignPlan, brand_context: str = "", brief: dict = None) -> dict:
+    brief_section = format_brief_section(brief, _BRIEF_FIELDS)
     user_message = f"""Generate the complete growth & discovery asset package for this song.
 
 SONG:
@@ -90,6 +98,8 @@ CAMPAIGN:
 Mode: {campaign.campaign_mode}
 Goal: {campaign.campaign_goal}
 Ministry angle: {campaign.ministry_angle}
+
+{brief_section}
 
 Write every field in full. These assets live on streaming platforms, press kits, and
 discovery surfaces for the life of the release — write them accordingly."""

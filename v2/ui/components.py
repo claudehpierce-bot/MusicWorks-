@@ -22,6 +22,7 @@ def render_html(html: str):
 _CREATOR_NAV = [
     ("🏠", "Home",             "home"),
     ("🚀", "Launch Campaign",  "wizard"),
+    ("📄", "Creative Brief",   "creative_brief"),
     ("🎯", "Media Blitz",      "media_blitz"),
     ("👥", "Artists",          "artists"),
     ("📚", "Media Library",    "media_library"),
@@ -37,6 +38,7 @@ _STUDIO_NAV = [
     ("🎵", "Projects",         "projects"),
     ("🗄️", "Studio",           "studio"),
     ("📦", "Releases",         "campaigns"),
+    ("📄", "Creative Brief",   "creative_brief"),
     ("✅", "Asset Review",     "approval"),
     ("🎯", "Media Blitz",      "media_blitz"),
     ("🚀", "Publishing",       "publishing"),

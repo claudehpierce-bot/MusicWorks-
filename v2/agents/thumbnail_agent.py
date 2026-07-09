@@ -2,7 +2,7 @@
 import json
 import os
 from contracts.models import SongInput, CampaignPlan
-from agents.base import call_claude
+from agents.base import call_claude, format_brief_section
 
 SYSTEM_PROMPT = """You are the Thumbnail & Art Agent for MindSpark MusicWorks™.
 
@@ -62,8 +62,15 @@ RETURN ONLY A VALID JSON OBJECT. No other text. No markdown fences.
 }"""
 
 
-def run(song: SongInput, campaign: CampaignPlan, brand_context: str = "") -> dict:
+_BRIEF_FIELDS = [
+    "campaign_theme", "campaign_title", "tagline", "emotion", "mood",
+    "visual_direction", "colour_direction",
+]
+
+
+def run(song: SongInput, campaign: CampaignPlan, brand_context: str = "", brief: dict = None) -> dict:
     canva_configured = bool(os.getenv("CANVA_API_KEY") or os.getenv("CANVA_API_TOKEN"))
+    brief_section = format_brief_section(brief, _BRIEF_FIELDS)
 
     user_message = f"""Produce the thumbnail and visual asset package for this song.
 
@@ -73,6 +80,8 @@ SONG:
 CAMPAIGN:
 Mode: {campaign.campaign_mode}
 Series: {song.series_name} Episode {song.series_episode}
+
+{brief_section}
 
 {"Canva API is configured — you may reference template variables." if canva_configured else "Canva API is NOT configured — generate manual Canva instructions only."}
 

@@ -140,6 +140,37 @@ def get_campaign_plan(song, mode: str) -> CampaignPlan:
     )
 
 
+# ── Live Creative Brief (mock Creative Director output) ────────────────────────
+
+MOCK_BRIEF_FIELDS = {
+    "campaign_theme": "You were never meant to do this alone — HLANGANA as an invitation back to gathering.",
+    "campaign_title": "HLANGANA: Gather Together",
+    "core_message": "A Zulu word for 'gather together' is also a command in Hebrews 10:25 — this is that command set to music.",
+    "target_audience": "African and Caribbean diaspora Christians, 20s-40s, who feel disconnected from in-person church community.",
+    "emotion": "Warm, communal, gently urgent — a call home, not a guilt trip.",
+    "mood": "Golden-hour warmth. Amapiano groove under gospel choir. Sunrise, not spotlight.",
+    "story": "Isolation → recognition of the word HLANGANA → the command in Hebrews 10:25 → the invitation to gather.",
+    "keywords": "HLANGANA meaning, Zulu word gather together, Hebrews 10:25, Afro-Gospel, Amapiano Gospel",
+    "seo": "Own the search for 'HLANGANA meaning' and 'Hebrews 10:25 song' simultaneously.",
+    "tagline": "Gather Together.",
+    "hashtags": "#HLANGANA, #KingdomWords, #GatherTogether, #FireAndFlowGospel, #AfroGospel",
+    "visual_direction": "Deep indigo grounding every frame, warm gold Montserrat type, sunrise-gradient warmth rising from the bottom third.",
+    "colour_direction": "#2D1B69 deep indigo primary, #D4A853 warm gold accent, warm white for body text.",
+    "campaign_goals": "1,000 streams in week one; devotional guide becomes the #1 shared asset; 3 churches request bulk copies.",
+    "artist_narrative": "Fire & Flow Gospel writes from inside the diaspora experience, not about it — HLANGANA is personal before it's public.",
+    "scripture_emphasis": "Hebrews 10:25 — not giving up meeting together.",
+    "call_to_action": "Stream HLANGANA, then gather with someone this week — don't just share the song, share the invitation.",
+    "platform_strategy": "Instagram and YouTube Shorts lead (visual word-lesson format); Facebook for the church-community share; TikTok for discovery.",
+    "playlist_direction": "Gospel/Amapiano crossover playlists and Sunday-morning devotional playlists — lead with the groove for secular crossover contexts.",
+    "campaign_duration": "A focused two-week launch moment, not a slow build — this song wants urgency.",
+    "publishing_priority": "Lead with the Instagram/YouTube Shorts word-lesson video; press and blog follow within 48 hours.",
+}
+
+
+def get_campaign_brief(song, mode: str) -> dict:
+    return dict(MOCK_BRIEF_FIELDS)
+
+
 # ── Social Media Agent ─────────────────────────────────────────────────────────
 
 SOCIAL_MEDIA_OUTPUT = {

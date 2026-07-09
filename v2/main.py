@@ -121,15 +121,16 @@ def main():
     # ── Campaign Agent ────────────────────────────────────────────────────────
     print(f"\nSTEP 1: Campaign Agent™ building campaign plan...")
     if mock_mode:
-        from agents.mock_data import get_campaign_plan
+        from agents.mock_data import get_campaign_plan, get_campaign_brief
         plan = get_campaign_plan(song, args.mode)
+        brief_fields = get_campaign_brief(song, args.mode)
     else:
         from brand_brain.brain_loader import load_context
         brand_context = load_context(song.artist_id)
         if brand_context:
             print(f"  Brand Brain loaded: {song.artist_id}")
         import agents.campaign_agent as campaign_agent
-        plan = campaign_agent.run(song, args.mode, brand_context=brand_context)
+        plan, brief_fields = campaign_agent.run(song, args.mode, brand_context=brand_context)
     display_campaign_plan(plan)
 
     # ── Founder approval of the plan ──────────────────────────────────────────

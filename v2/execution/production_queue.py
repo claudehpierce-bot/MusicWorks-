@@ -82,6 +82,11 @@ JOB_STATUSES = [
     ("scheduled",   "Scheduled",  "#D4A853"),
     ("published",   "Published",  "#10B981"),
     ("rejected",    "Rejected",   "#EF4444"),
+    # Terminal, like rejected -- but reached only by an explicit founder
+    # action (approving a newer alternative), never automatically. Kept as
+    # history, not deleted. See execution/orchestrator.py::regenerate_group
+    # and the V7 Constitution, Amendment I, Principle 7.
+    ("superseded",  "Superseded", "#6A6460"),
 ]
 
 STATUS_COLOR  = {k: c for k, _, c in JOB_STATUSES}
@@ -127,6 +132,8 @@ def create_job(
     priority: int = 5,
     prompt: str = "",
     campaign_id: str = "",
+    alternative_of: str = "",
+    dedupe_key: str = "",
 ) -> dict:
     meta = JOB_TYPE_META.get(job_type, {})
     job_id = str(uuid.uuid4())[:8]
@@ -135,6 +142,14 @@ def create_job(
         "job_id":        job_id,
         "artist_id":     artist_id,
         "campaign_id":   campaign_id,
+        # job_id this job is a regenerated alternative to, or "" for an
+        # original. Set only by RenderOrchestrator.regenerate_group -- the
+        # original job is NEVER mutated (Amendment I, Principle 6-7).
+        "alternative_of": alternative_of,
+        # Distinguishes same-job_type siblings that legitimately coexist
+        # (e.g. thumbnail Concept A vs B) so regeneration can match a new
+        # alternative to the right lineage instead of any job of that type.
+        "dedupe_key":    dedupe_key,
         "song_id":       song_id,
         "song_title":    song_title,
         "release_date":  release_date,

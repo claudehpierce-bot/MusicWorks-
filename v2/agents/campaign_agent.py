@@ -31,6 +31,13 @@ RISK LOG RULES:
 - Always check for: pronunciation risks (non-English words), link readiness risks, platform timing risks
 - Risks specific to July 3 launch: US Independence Day eve — diaspora audience is unaffected
 
+YOU ARE ALSO THE CREATIVE DIRECTOR. Beyond the campaign plan above, produce the
+Live Creative Brief — the single source of creative truth every other
+department (Art, Film, Artist Relations, Growth & Discovery) will read from
+instead of forming their own independent interpretation of this song. Every
+field must be concrete and specific to THIS song — never generic filler a
+founder would have to rewrite before it's usable.
+
 RETURN ONLY A VALID JSON OBJECT. No other text. No markdown fences. No explanation before or after.
 {
   "campaign_id": "kebab-case-unique-id",
@@ -58,20 +65,47 @@ RETURN ONLY A VALID JSON OBJECT. No other text. No markdown fences. No explanati
       "founder_action": "What the founder needs to do"
     }
   ],
-  "ministry_angle": "How this campaign specifically serves the Church and not just the audience"
+  "ministry_angle": "How this campaign specifically serves the Church and not just the audience",
+  "brief": {
+    "campaign_theme": "The one-line creative concept every asset should feel like it belongs to",
+    "campaign_title": "The campaign's own name, distinct from the song title if useful",
+    "core_message": "The single point every piece of content should communicate",
+    "target_audience": "Who this campaign is actually speaking to",
+    "emotion": "The primary emotional register (e.g. hopeful, urgent, communal)",
+    "mood": "The atmosphere/tone for anything cinematic or visual",
+    "story": "The narrative arc — where this campaign starts and ends emotionally",
+    "keywords": "Comma-separated search terms this song should be found for",
+    "seo": "One sentence describing the SEO angle",
+    "tagline": "A short, reusable line for graphics and captions",
+    "hashtags": "Comma-separated hashtags",
+    "visual_direction": "What Art Department should see in its mind before designing anything",
+    "colour_direction": "Specific colors/palette guidance",
+    "campaign_goals": "What success looks like for this campaign",
+    "artist_narrative": "The artist's own story as it relates to this release",
+    "scripture_emphasis": "Which scripture/theological angle to foreground",
+    "call_to_action": "What you want anyone who sees this content to actually do",
+    "platform_strategy": "Which platforms matter most and why",
+    "playlist_direction": "What kind of playlists/contexts this song belongs in",
+    "campaign_duration": "How long this campaign should feel like it runs",
+    "publishing_priority": "What should go out first if not everything can launch at once"
+  }
 }"""
 
 
-def run(song: SongInput, mode: str, brand_context: str = "") -> CampaignPlan:
+def run(song: SongInput, mode: str, brand_context: str = "") -> tuple[CampaignPlan, dict]:
+    """Returns (CampaignPlan, brief_fields) — campaign_agent is both the
+    campaign planner and, per the V7 Constitution, the Creative Director who
+    authors the Live Creative Brief's initial version."""
     user_message = f"""Run a {mode.upper()} campaign for this song:
 
 SONG DATA:
 {json.dumps(song.__dict__, indent=2, default=str)}
 
-Produce the full campaign plan. Remember: this is a gospel music release, not entertainment marketing.
-Every decision should serve both the audience and the Kingdom mission."""
+Produce the full campaign plan AND the Live Creative Brief. Remember: this is a gospel music
+release, not entertainment marketing. Every decision should serve both the audience and the
+Kingdom mission."""
 
-    result = call_claude(SYSTEM_PROMPT, user_message, max_tokens=3000, brand_context=brand_context)
+    result = call_claude(SYSTEM_PROMPT, user_message, max_tokens=4096, brand_context=brand_context)
 
     if result.get("parse_error"):
         raise RuntimeError(
@@ -79,7 +113,7 @@ Every decision should serve both the audience and the Kingdom mission."""
             "Raw response saved. Check your API key and try again."
         )
 
-    return CampaignPlan(
+    plan = CampaignPlan(
         campaign_id=result.get("campaign_id", f"{song.song_id}-campaign"),
         campaign_name=result.get("campaign_name", f"{song.title} Campaign"),
         campaign_mode=result.get("campaign_mode", mode),
@@ -90,3 +124,5 @@ Every decision should serve both the audience and the Kingdom mission."""
         ministry_angle=result.get("ministry_angle", ""),
         song_id=song.song_id,
     )
+    brief_fields = result.get("brief", {})
+    return plan, brief_fields

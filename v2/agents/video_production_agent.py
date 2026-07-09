@@ -1,7 +1,7 @@
 """Video Production Agent — produces storyboard and Veo job prompts."""
 import json
 from contracts.models import SongInput, CampaignPlan
-from agents.base import call_claude
+from agents.base import call_claude, format_brief_section
 
 SYSTEM_PROMPT = """You are the Video Production Agent for MindSpark MusicWorks™.
 
@@ -61,7 +61,14 @@ RETURN ONLY A VALID JSON OBJECT. No other text. No markdown fences.
 }"""
 
 
-def run(song: SongInput, campaign: CampaignPlan, brand_context: str = "") -> dict:
+_BRIEF_FIELDS = [
+    "campaign_theme", "scripture_emphasis", "core_message", "emotion",
+    "mood", "story", "visual_direction",
+]
+
+
+def run(song: SongInput, campaign: CampaignPlan, brand_context: str = "", brief: dict = None) -> dict:
+    brief_section = format_brief_section(brief, _BRIEF_FIELDS)
     user_message = f"""Produce the complete video production package for this song.
 
 SONG:
@@ -71,6 +78,8 @@ CAMPAIGN:
 Mode: {campaign.campaign_mode}
 Goal: {campaign.campaign_goal}
 Series: {song.series_name} Episode {song.series_episode}
+
+{brief_section}
 
 The video should teach the meaning of the word {song.title} ({song.title_meaning} in {song.title_language})
 and connect it to the scripture {song.scripture_primary}.

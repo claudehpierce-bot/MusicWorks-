@@ -103,6 +103,7 @@ def create_campaign(
     song_title: str,
     campaign_name: str,
     campaign_mode: str = "blitz",
+    song_file_path: str = "",
 ) -> dict:
     """Create the campaign for this song, or return the existing one unchanged
     (idempotent — a founder re-running the wizard for the same song reuses the
@@ -131,6 +132,10 @@ def create_campaign(
         "paused_at":        None,
         "completed_at":     None,
         "extension_count":  0,
+        # Set once at creation so a later session (e.g. regenerating a
+        # department) can reload the exact SongInput this campaign was built
+        # from without guessing a filename.
+        "song_file_path":   song_file_path,
         "created_at":       now,
         "updated_at":       now,
     }
