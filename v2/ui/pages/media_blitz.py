@@ -229,6 +229,8 @@ def render():
                 campaign_store.update_campaign_status(
                     artist_id, campaign_id, "completed", completed_at=datetime.now(timezone.utc).isoformat()
                 )
+                from execution.campaign_history import record_completion
+                record_completion(artist_id, campaign_id)
                 st.rerun()
         with b3:
             if st.button("🗓  Reschedule", use_container_width=True, key="mb_reschedule"):
@@ -255,6 +257,8 @@ def render():
                 campaign_store.update_campaign_status(
                     artist_id, campaign_id, "completed", completed_at=datetime.now(timezone.utc).isoformat()
                 )
+                from execution.campaign_history import record_completion
+                record_completion(artist_id, campaign_id)
                 st.rerun()
 
     elif status == "completed":
