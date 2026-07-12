@@ -136,15 +136,23 @@ def _draft_last_saved_label(draft: dict) -> str:
     try:
         from datetime import datetime
         saved = datetime.fromisoformat(ts)
-        delta = datetime.now() - saved
-        secs = delta.total_seconds()
+        now = datetime.now()
+        secs = (now - saved).total_seconds()
         if secs < 60:
             return "just now"
         if secs < 3600:
-            return f"{int(secs // 60)} min ago"
-        if secs < 86400:
-            return f"{int(secs // 3600)} hr ago"
-        return saved.strftime("%b %d, %Y %I:%M %p")
+            mins = int(secs // 60)
+            return f"{mins} minute ago" if mins == 1 else f"{mins} minutes ago"
+        if secs < 86400 and saved.date() == now.date():
+            hrs = int(secs // 3600)
+            return f"{hrs} hour ago" if hrs == 1 else f"{hrs} hours ago"
+        day_gap = (now.date() - saved.date()).days
+        time_str = saved.strftime("%I:%M %p").lstrip("0")
+        if day_gap == 1:
+            return f"Yesterday at {time_str}"
+        if day_gap in (2, 3, 4, 5, 6):
+            return f"{saved.strftime('%A')} at {time_str}"
+        return saved.strftime("%b %d, %Y at %I:%M %p")
     except Exception:
         return ""
 
@@ -1359,13 +1367,21 @@ def render():
         if draft and (draft.get("title") or draft.get("artist_name")):
             last_step_idx = max(0, min(draft.get("_draft_step", 1) - 1, len(STEPS) - 1))
             saved_label = _draft_last_saved_label(draft)
-            saved_line = f" · saved {saved_label}" if saved_label else ""
-            st.info(
-                f"📝 **Resume your campaign?**\n\n"
-                f"**Artist:** {draft.get('artist_name', '—')}  \n"
-                f"**Song title:** {draft.get('title', 'Untitled')}  \n"
-                f"**Last completed step:** {STEPS[last_step_idx]}{saved_line}"
-            )
+            render_html(f"""
+            <div class="mw-card" style="padding:1.5rem 1.75rem; margin-bottom:1rem;
+                        border-left:3px solid #22C55E; background:linear-gradient(135deg, #0A2A1A22, #0D3D2022);">
+            <div style="font-size:17px; font-weight:700; color:#F0EDE8; margin-bottom:2px;">👋 Welcome back.</div>
+            <div style="font-size:14px; color:#C8C4BE; margin-bottom:1rem;">
+                We found an unfinished campaign — your work is safe, right where you left it.
+            </div>
+            <div style="font-size:13px; color:#C8C4BE; line-height:1.9;">
+                <span style="color:#8A8480;">Artist:</span> <strong style="color:#F0EDE8;">{draft.get('artist_name') or '—'}</strong><br>
+                <span style="color:#8A8480;">Song:</span> <strong style="color:#F0EDE8;">{draft.get('title') or 'Untitled'}</strong><br>
+                <span style="color:#8A8480;">Last completed step:</span> <strong style="color:#F0EDE8;">{STEPS[last_step_idx]}</strong><br>
+                <span style="color:#8A8480;">Last saved:</span> <strong style="color:#F0EDE8;">{saved_label or 'a moment ago'}</strong>
+            </div>
+            </div>
+            """)
             if st.session_state.get("_confirm_start_over"):
                 st.warning("Starting over deletes this saved draft. This can't be undone.")
                 c1, c2 = st.columns([1, 1])
