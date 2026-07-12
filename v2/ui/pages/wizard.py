@@ -94,9 +94,11 @@ def _progress_header():
 # ── Draft helpers ─────────────────────────────────────────────────────────────
 
 def _save_draft(d: dict, step: int):
+    from datetime import datetime
     DRAFT_PATH.parent.mkdir(parents=True, exist_ok=True)
     safe = {k: v for k, v in d.items() if isinstance(v, (str, int, float, bool, list, dict, type(None)))}
     safe["_draft_step"] = step
+    safe["_draft_saved_at"] = datetime.now().isoformat()
     DRAFT_PATH.write_text(json.dumps(safe, indent=2, default=str), encoding="utf-8")
 
 
@@ -115,6 +117,67 @@ def _clear_draft():
             DRAFT_PATH.unlink()
         except Exception:
             pass
+
+
+def _autosave(step: int):
+    """Save whatever is currently in wizard_data, tagged with the given resume
+    step. Called on every rerun of a step (not just on Continue), so a crash,
+    refresh, or exception never loses more than the last keystroke."""
+    try:
+        _save_draft(st.session_state.wizard_data, step)
+    except Exception:
+        pass
+
+
+def _draft_last_saved_label(draft: dict) -> str:
+    ts = draft.get("_draft_saved_at")
+    if not ts:
+        return ""
+    try:
+        from datetime import datetime
+        saved = datetime.fromisoformat(ts)
+        delta = datetime.now() - saved
+        secs = delta.total_seconds()
+        if secs < 60:
+            return "just now"
+        if secs < 3600:
+            return f"{int(secs // 60)} min ago"
+        if secs < 86400:
+            return f"{int(secs // 3600)} hr ago"
+        return saved.strftime("%b %d, %Y %I:%M %p")
+    except Exception:
+        return ""
+
+
+def _valid_url(value: str) -> bool:
+    """Blank is always valid (optional field). A non-blank value must look
+    like a real http(s) URL. Never raises."""
+    if not value or not value.strip():
+        return True
+    try:
+        from urllib.parse import urlparse
+        parsed = urlparse(value.strip())
+        return parsed.scheme in ("http", "https") and bool(parsed.netloc)
+    except Exception:
+        return False
+
+
+def _handle_step_exception(exc: Exception, step: int):
+    """Never dump the founder to a blank wizard. Preserve the draft, show a
+    human-readable message, and only surface technical detail in Studio mode."""
+    _autosave(step)
+    st.error(
+        "Something interrupted this step, but your campaign draft has been saved. "
+        "You can pick up right where you left off."
+    )
+    if st.session_state.get("studio_mode"):
+        st.exception(exc)
+    if st.button("↺ Return to saved campaign", type="primary", key="_step_exc_return"):
+        draft = _load_draft()
+        if draft:
+            st.session_state.wizard_data = draft
+            st.session_state.wizard_step = draft.get("_draft_step", step)
+        st.rerun()
 
 
 # ── STEP 0: ARTIST ────────────────────────────────────────────────────────────
@@ -151,6 +214,7 @@ def _step_artist():
             if st.button("Continue with this artist →", type="primary", use_container_width=True):
                 st.session_state.wizard_data["artist_id"] = selected["artist_id"]
                 st.session_state.wizard_data["artist_name"] = selected["artist_name"]
+                _save_draft(st.session_state.wizard_data, 1)
                 _go(1)
         with col2:
             if st.button("+ Add Another Artist", use_container_width=True):
@@ -188,6 +252,7 @@ def _step_artist():
         if st.button("Continue with this artist →", type="primary"):
             st.session_state.wizard_data["artist_id"] = selected["artist_id"]
             st.session_state.wizard_data["artist_name"] = selected["artist_name"]
+            _save_draft(st.session_state.wizard_data, 1)
             _go(1)
 
 
@@ -215,6 +280,7 @@ def _create_artist_form():
             st.session_state.wizard_data["artist_id"] = new_id
             st.session_state.wizard_data["artist_name"] = new_name
             st.session_state.pop("_show_create_artist", None)
+            _save_draft(st.session_state.wizard_data, 1)
             _go(1)
 
 
@@ -246,6 +312,20 @@ def _step_creative_master():
             analysis = _cached_analyze(file_bytes, audio_file.name)
             st.audio(audio_file)
             st.caption(f"✓ {audio_file.name}  ·  {audio_file.size // 1024} KB")
+            # Persist to disk immediately — don't wait for Continue. Streamlit's
+            # file_uploader value is lost on any refresh/rerun, so the file must
+            # be safely on disk (and referenced in the draft) the moment it lands.
+            artist_id = d.get("artist_id", "")
+            save_dir = ARTISTS_DIR / artist_id / "audio"
+            save_dir.mkdir(parents=True, exist_ok=True)
+            dest = save_dir / audio_file.name
+            dest.write_bytes(file_bytes)
+            d.update({
+                "audio_file_path": str(dest),
+                "audio_file_name": audio_file.name,
+                "audio_analysis": analysis,
+            })
+            _autosave(1)
         elif d.get("audio_file_name") and d.get("audio_analysis"):
             analysis = d["audio_analysis"]
             st.caption(f"✓ On file: **{d['audio_file_name']}**  — upload a new file to replace it.")
@@ -298,6 +378,9 @@ def _step_creative_master():
     </div>
     """)
 
+    d.update({"mix_type": mix_type, "key": key or None})
+    _autosave(1)
+
     col1, col2 = st.columns(2)
     with col1:
         if st.button("← Back"):
@@ -307,17 +390,7 @@ def _step_creative_master():
             if not audio_file and not d.get("audio_file_name"):
                 st.error("Please upload your Creative Master to continue.")
             else:
-                artist_id = d.get("artist_id", "")
-                audio_path = d.get("audio_file_path", "")
-                if audio_file:
-                    save_dir = ARTISTS_DIR / artist_id / "audio"
-                    save_dir.mkdir(parents=True, exist_ok=True)
-                    dest = save_dir / audio_file.name
-                    dest.write_bytes(file_bytes)
-                    audio_path = str(dest)
                 d.update({
-                    "audio_file_path": audio_path,
-                    "audio_file_name": audio_file.name if audio_file else d.get("audio_file_name", ""),
                     "mix_type": mix_type,
                     "duration_seconds": duration or None,
                     "bpm": bpm or None,
@@ -451,6 +524,28 @@ def _step_details_lyrics():
         placeholder="Team notes, production context, anything for your own reference…",
     )
 
+    # Autosave everything typed so far, even if Continue is never clicked and
+    # required fields are still incomplete — a crash mid-step must not cost
+    # the founder anything they've already typed.
+    d.update({
+        "title": song_title.strip(),
+        "title_meaning": title_meaning.strip(),
+        "title_language": title_language.strip(),
+        "album_title": album_title.strip(),
+        "release_date": str(release_date),
+        "cultural_notes": cultural_notes.strip() or None,
+        "lyrics_text": lyrics_text.strip() or None,
+        "scripture_primary": scripture_primary.strip(),
+        "scripture_primary_text": scripture_text.strip(),
+        "scripture_supporting": [s.strip() for s in scripture_supporting.split(",") if s.strip()],
+        "themes": [t.strip() for t in themes_raw.split(",") if t.strip()],
+        "genre": [g.strip() for g in genre_raw.split(",") if g.strip()],
+        "mood": [m.strip() for m in mood_raw.split(",") if m.strip()],
+        "mode": campaign_mode,
+        "internal_notes": internal_notes.strip(),
+    })
+    _autosave(2)
+
     col1, col2 = st.columns(2)
     with col1:
         if st.button("← Back"):
@@ -477,24 +572,7 @@ def _step_details_lyrics():
                 slug = re.sub(r"[^a-z0-9-]", "-", song_title.strip().lower())
                 artist_id = d.get("artist_id", "unknown")
                 song_id = d.get("song_id") or f"{artist_id[:8].replace('_', '-')}-{slug}-{uuid.uuid4().hex[:4]}"
-                d.update({
-                    "song_id": song_id,
-                    "title": song_title.strip(),
-                    "title_meaning": title_meaning.strip(),
-                    "title_language": title_language.strip(),
-                    "album_title": album_title.strip(),
-                    "release_date": str(release_date),
-                    "cultural_notes": cultural_notes.strip() or None,
-                    "lyrics_text": lyrics_text.strip() or None,
-                    "scripture_primary": scripture_primary.strip(),
-                    "scripture_primary_text": scripture_text.strip(),
-                    "scripture_supporting": [s.strip() for s in scripture_supporting.split(",") if s.strip()],
-                    "themes": [t.strip() for t in themes_raw.split(",") if t.strip()],
-                    "genre": [g.strip() for g in genre_raw.split(",") if g.strip()],
-                    "mood": [m.strip() for m in mood_raw.split(",") if m.strip()],
-                    "mode": campaign_mode,
-                    "internal_notes": internal_notes.strip(),
-                })
+                d["song_id"] = song_id
                 _save_draft(d, 3)
                 _go(3)
 
@@ -577,6 +655,7 @@ def _step_artwork():
 
     d.update(saved_paths)
     has_cover = bool(saved_paths.get("artwork_file_path"))
+    _autosave(3)
 
     col1, col2 = st.columns(2)
     with col1:
@@ -586,44 +665,123 @@ def _step_artwork():
         if not has_cover:
             st.caption("Upload an album cover to continue.")
         if st.button("Continue to Release Info →", type="primary", disabled=not has_cover):
+            _save_draft(d, 4)
             _go(4)
 
 
 # ── STEP 4: RELEASE INFO ──────────────────────────────────────────────────────
 
-def _step_release_info():
-    from datetime import date as _date
-    d = st.session_state.wizard_data
+RELEASE_STATUS_OPTIONS = ["Pre-release", "Scheduled", "Released", "Existing catalog campaign"]
 
-    st.markdown("### Step 5 — DistroKid Release Information")
+# Every URL-shaped field this step can collect. Used to know which keys to
+# validate and which to persist — never both for every status at once.
+_URL_FIELDS = [
+    "presave_url", "streaming_url", "spotify_url", "apple_music_url",
+    "youtube_music_url", "amazon_music_url", "audiomack_url", "deezer_url", "other_url",
+]
+
+
+def _url_field(d: dict, errors: dict, label: str, key: str, placeholder: str = "https://...", help: str | None = None) -> str:
+    val = st.text_input(label, value=d.get(key, "") or "", placeholder=placeholder, help=help, key=f"ri_{key}")
+    if key in errors:
+        st.caption(f":red[⚠ {errors[key]}]")
+    return val
+
+
+def _step_release_info():
+    from datetime import date as _date, time as _time
+    d = st.session_state.wizard_data
+    errors = st.session_state.get("_ri_errors", {})
+
+    st.markdown("### Step 5 — Release Information")
     st.caption(f"**{d.get('title', '')}** · {d.get('artist_name', '')}")
     st.caption(
-        "MusicWorks doesn't distribute your music — DistroKid does. These details anchor "
-        "your media campaign to the actual release so every link points to the right place."
+        "MusicWorks doesn't distribute your music — DistroKid does. Tell us where this "
+        "release actually stands and we'll only ask for what applies. Everything below "
+        "except Release Status is optional — leave anything blank you don't have yet."
     )
 
-    col_a, col_b = st.columns(2)
-    with col_a:
-        release_date = st.date_input(
-            "Release date *",
-            value=_date.fromisoformat(d["release_date"]) if d.get("release_date") else _date.today(),
-            key="ri_release_date",
+    status_idx = RELEASE_STATUS_OPTIONS.index(d["release_status"]) if d.get("release_status") in RELEASE_STATUS_OPTIONS else 0
+    release_status = st.selectbox("Release status *", RELEASE_STATUS_OPTIONS, index=status_idx, key="ri_release_status")
+
+    fields: dict = {}
+    release_date = _date.fromisoformat(d["release_date"]) if d.get("release_date") else _date.today()
+    release_time_str = d.get("release_time") or ""
+
+    if release_status == "Pre-release":
+        col_a, col_b = st.columns(2)
+        with col_a:
+            release_date = st.date_input("Planned release date *", value=release_date, key="ri_release_date")
+            type_options = ["Single", "EP", "Album"]
+            type_idx = type_options.index(d["release_type"]) if d.get("release_type") in type_options else 0
+            fields["release_type"] = st.selectbox("Release type:", type_options, index=type_idx, key="ri_release_type")
+        with col_b:
+            fields["presave_url"] = _url_field(
+                d, errors, "Pre-save / HyperFollow URL (optional):", "presave_url",
+                help="Don't have one yet? Leave this blank and add it later.",
+            )
+
+    elif release_status == "Scheduled":
+        col_a, col_b = st.columns(2)
+        with col_a:
+            release_date = st.date_input("Release date *", value=release_date, key="ri_release_date")
+            default_time = _time.fromisoformat(release_time_str) if release_time_str else _time(9, 0)
+            release_time_val = st.time_input("Release time (optional):", value=default_time, key="ri_release_time")
+            fields["release_time"] = release_time_val.strftime("%H:%M")
+            fields["presave_url"] = _url_field(d, errors, "HyperFollow / pre-save URL (optional):", "presave_url")
+        with col_b:
+            fields["isrc"] = st.text_input("ISRC (optional):", value=d.get("isrc", "") or "", placeholder="e.g. QZK5X2412345", key="ri_isrc")
+            fields["upc"] = st.text_input("UPC (optional):", value=d.get("upc", "") or "", placeholder="e.g. 850012345678", key="ri_upc")
+            fields["streaming_url"] = _url_field(
+                d, errors, "Streaming URL (optional — may not exist yet):", "streaming_url",
+                placeholder="https://distrokid.com/hyperfollow/...",
+            )
+
+    else:  # Released or Existing catalog campaign
+        col_a, col_b = st.columns(2)
+        with col_a:
+            fields["streaming_url"] = _url_field(
+                d, errors, "Primary smart link / HyperFollow URL:", "streaming_url",
+                placeholder="https://distrokid.com/hyperfollow/...",
+                help="The one link you'd put in a bio. Leave blank if you don't have one.",
+            )
+            release_date = st.date_input("Release date:", value=release_date, key="ri_release_date")
+        with col_b:
+            fields["isrc"] = st.text_input("ISRC (optional):", value=d.get("isrc", "") or "", placeholder="e.g. QZK5X2412345", key="ri_isrc")
+            fields["upc"] = st.text_input("UPC (optional):", value=d.get("upc", "") or "", placeholder="e.g. 850012345678", key="ri_upc")
+
+        st.markdown("<div class='mw-section-label' style='margin-top:0.75rem;'>Optional platform links</div>", unsafe_allow_html=True)
+        p1, p2, p3 = st.columns(3)
+        with p1:
+            fields["spotify_url"] = _url_field(d, errors, "Spotify:", "spotify_url")
+            fields["amazon_music_url"] = _url_field(d, errors, "Amazon Music:", "amazon_music_url")
+        with p2:
+            fields["apple_music_url"] = _url_field(d, errors, "Apple Music:", "apple_music_url")
+            fields["audiomack_url"] = _url_field(d, errors, "Audiomack:", "audiomack_url")
+        with p3:
+            fields["youtube_music_url"] = _url_field(d, errors, "YouTube Music:", "youtube_music_url")
+            fields["deezer_url"] = _url_field(d, errors, "Deezer:", "deezer_url")
+        fields["other_url"] = _url_field(d, errors, "Other platform link:", "other_url")
+
+        keep_presave = st.checkbox(
+            "Keep a pre-save URL on file for records",
+            value=bool(d.get("presave_url")),
+            key="ri_keep_presave",
         )
-        isrc = st.text_input("ISRC:", value=d.get("isrc", "") or "", placeholder="e.g. QZK5X2412345")
-        upc = st.text_input("UPC:", value=d.get("upc", "") or "", placeholder="e.g. 850012345678")
-    with col_b:
-        streaming_url = st.text_input(
-            "Streaming URL (DistroKid smart link):",
-            value=d.get("streaming_url", "") or "",
-            placeholder="https://distrokid.com/hyperfollow/...",
-        )
-        album_url = st.text_input("Album URL:", value=d.get("album_url", "") or "", placeholder="https://...")
-        presave_url = st.text_input("Pre-save URL:", value=d.get("presave_url", "") or "", placeholder="https://...")
+        fields["presave_url"] = _url_field(d, errors, "Pre-save URL (archived):", "presave_url") if keep_presave else None
+
+    fields["release_status"] = release_status
+    fields["release_date"] = str(release_date)
+
+    # Autosave every keystroke on this step — unvalidated is fine, this is a
+    # save-what's-there checkpoint, not a submission.
+    d.update(fields)
+    _autosave(4)
 
     render_html("""
     <div class="mw-card" style="padding:0.75rem 1rem; border-left:3px solid #9B89D4; margin-top:0.5rem;">
     <div style="font-size:12px; color:#9B89D4; font-weight:600; margin-bottom:2px;">Campaign anchor</div>
-    <div style="font-size:12px; color:#8A8480;">Every link MusicWorks generates — captions, bios, thumbnails — points back here.</div>
+    <div style="font-size:12px; color:#8A8480;">Every link MusicWorks generates — captions, bios, thumbnails — points back here. Nothing above is required except Release Status; add the rest whenever it exists.</div>
     </div>
     """)
 
@@ -633,30 +791,43 @@ def _step_release_info():
             _go(3)
     with col2:
         if st.button("Continue →", type="primary"):
-            d.update({
-                "release_date": str(release_date),
-                "isrc": isrc.strip() or None,
-                "upc": upc.strip() or None,
-                "streaming_url": streaming_url.strip() or None,
-                "album_url": album_url.strip() or None,
-                "presave_url": presave_url.strip() or None,
-            })
-            try:
-                from execution.distrokid_store import upsert_release
-                upsert_release(d.get("artist_id", ""), d.get("song_id", ""), {
-                    "song_title": d.get("title", ""),
-                    "release_date": d.get("release_date", ""),
-                    "isrc": d.get("isrc"),
-                    "upc": d.get("upc"),
-                    "streaming_url": d.get("streaming_url"),
-                    "album_url": d.get("album_url"),
-                    "pre_save_link": d.get("presave_url"),
-                    "status": "upcoming",
-                })
-            except Exception as e:
-                st.warning(f"Could not save to DistroKid release records: {e}")
-            _save_draft(d, 5)
-            _go(5)
+            field_errors = {}
+            for key in _URL_FIELDS:
+                val = fields.get(key)
+                if val and not _valid_url(val):
+                    field_errors[key] = "Enter a valid link starting with http:// or https://, or leave this blank."
+            if field_errors:
+                st.session_state["_ri_errors"] = field_errors
+                st.rerun()
+            else:
+                st.session_state.pop("_ri_errors", None)
+                d.update({k: (v.strip() if isinstance(v, str) else v) or None for k, v in fields.items()})
+                try:
+                    from execution.distrokid_store import upsert_release
+                    upsert_release(d.get("artist_id", ""), d.get("song_id", ""), {
+                        "song_title": d.get("title", ""),
+                        "release_date": d.get("release_date", ""),
+                        "release_time": d.get("release_time"),
+                        "release_status": d.get("release_status"),
+                        "release_type": d.get("release_type"),
+                        "isrc": d.get("isrc"),
+                        "upc": d.get("upc"),
+                        "streaming_url": d.get("streaming_url"),
+                        "album_url": d.get("album_url"),
+                        "spotify_url": d.get("spotify_url"),
+                        "apple_music_url": d.get("apple_music_url"),
+                        "youtube_music_url": d.get("youtube_music_url"),
+                        "amazon_music_url": d.get("amazon_music_url"),
+                        "audiomack_url": d.get("audiomack_url"),
+                        "deezer_url": d.get("deezer_url"),
+                        "other_url": d.get("other_url"),
+                        "pre_save_link": d.get("presave_url"),
+                        "status": "upcoming",
+                    })
+                except Exception as e:
+                    st.warning(f"Could not save to DistroKid release records: {e}")
+                _save_draft(d, 5)
+                _go(5)
 
 
 # ── STEP 5: ANALYSIS ──────────────────────────────────────────────────────────
@@ -1182,24 +1353,42 @@ def render():
 
     step = st.session_state.wizard_step
 
-    # Offer draft resume when entering a fresh wizard
+    # Offer draft resume when entering a fresh wizard — never silently discard a draft.
     if step == 0 and not st.session_state.wizard_data:
         draft = _load_draft()
-        if draft and draft.get("title"):
+        if draft and (draft.get("title") or draft.get("artist_name")):
+            last_step_idx = max(0, min(draft.get("_draft_step", 1) - 1, len(STEPS) - 1))
+            saved_label = _draft_last_saved_label(draft)
+            saved_line = f" · saved {saved_label}" if saved_label else ""
             st.info(
-                f"📝 You have an unfinished draft: **{draft.get('title', 'Untitled')}** "
-                f"— {draft.get('artist_name', '')}"
+                f"📝 **Resume your campaign?**\n\n"
+                f"**Artist:** {draft.get('artist_name', '—')}  \n"
+                f"**Song title:** {draft.get('title', 'Untitled')}  \n"
+                f"**Last completed step:** {STEPS[last_step_idx]}{saved_line}"
             )
-            c1, c2 = st.columns([1, 1])
-            with c1:
-                if st.button("Resume Draft →", type="primary"):
-                    st.session_state.wizard_data = draft
-                    st.session_state.wizard_step = draft.get("_draft_step", 1)
-                    st.rerun()
-            with c2:
-                if st.button("Start Fresh"):
-                    _clear_draft()
-                    st.rerun()
+            if st.session_state.get("_confirm_start_over"):
+                st.warning("Starting over deletes this saved draft. This can't be undone.")
+                c1, c2 = st.columns([1, 1])
+                with c1:
+                    if st.button("Yes, start over", type="primary"):
+                        _clear_draft()
+                        st.session_state.pop("_confirm_start_over", None)
+                        st.rerun()
+                with c2:
+                    if st.button("Cancel"):
+                        st.session_state.pop("_confirm_start_over", None)
+                        st.rerun()
+            else:
+                c1, c2 = st.columns([1, 1])
+                with c1:
+                    if st.button("Resume Campaign →", type="primary", use_container_width=True):
+                        st.session_state.wizard_data = draft
+                        st.session_state.wizard_step = draft.get("_draft_step", 1)
+                        st.rerun()
+                with c2:
+                    if st.button("Start Over", use_container_width=True):
+                        st.session_state["_confirm_start_over"] = True
+                        st.rerun()
             st.divider()
 
     dispatch = [
@@ -1213,7 +1402,10 @@ def render():
     ]
 
     if 0 <= step < len(dispatch):
-        dispatch[step]()
+        try:
+            dispatch[step]()
+        except Exception as e:
+            _handle_step_exception(e, step)
     else:
         st.session_state.wizard_step = 0
         st.rerun()
