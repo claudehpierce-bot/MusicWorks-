@@ -99,6 +99,23 @@ def run():
         reference_meta.get("derivatives", "missing") == {},
     )
 
+    # 5b. SAGE-AVATAR-1 is a constitutional identity asset: changing what she
+    # looks like requires explicit Founder approval; repackaging (sizes,
+    # encodings, compression) does not. This must be a structured, checkable
+    # rule, not just a prose note.
+    check("SAGE-AVATAR-1 is flagged constitutional_identity_asset=true", avatar_meta.get("constitutional_identity_asset") is True)
+    policy = avatar_meta.get("identity_change_policy", {})
+    check(
+        "SAGE-AVATAR-1 identity_change_policy is fully structured",
+        bool(policy.get("rule"))
+        and isinstance(policy.get("permitted_without_founder_approval"), list) and len(policy["permitted_without_founder_approval"]) > 0
+        and isinstance(policy.get("requires_explicit_founder_approval"), list) and len(policy["requires_explicit_founder_approval"]) > 0,
+    )
+    check(
+        "SAGE-PRESENCE-REFERENCE-1 does not carry the constitutional identity flag",
+        reference_meta.get("constitutional_identity_asset") is not True,
+    )
+
     # 6. The avatar canonical is a genuinely separate file from the presence
     # reference -- not accidentally still pointing at the mockup.
     try:

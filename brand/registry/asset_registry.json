@@ -6,6 +6,20 @@
     "status": "founder_approved",
     "approved_date": "2026-07-14",
     "reusable_ui_asset": true,
+    "constitutional_identity_asset": true,
+    "identity_change_policy": {
+      "rule": "SAGE-AVATAR-1 is a constitutional identity asset. Sage's visual identity -- who she appears to be -- may only change through explicit Founder approval, the same way her canonical portrait itself was approved.",
+      "permitted_without_founder_approval": [
+        "derivative sizes (new crop dimensions for new UI contexts)",
+        "encodings/formats (e.g. re-exporting a derivative as PNG/AVIF instead of WebP)",
+        "compression/optimization (lossless recompression, quality-setting tuning)"
+      ],
+      "requires_explicit_founder_approval": [
+        "replacing or altering the canonical source image itself",
+        "any change listed in prohibited_modifications below (facial identity, hairstyle, expression, skin tone, executive presentation, jewelry, insignia, overall visual character)"
+      ],
+      "enforcement_note": "Technical/engineering changes to how the asset is packaged are routine maintenance. Changes to what the asset depicts are a governance decision, not an engineering one."
+    },
     "canonical_source_path": "brand/assets/sage/avatar/sage_avatar_canonical_2026.png",
     "canonical_notes": "Sage's isolated portrait, losslessly cropped from SAGE-PRESENCE-REFERENCE-1's source and saved as its own PNG master. This IS the canonical file going forward -- it is not re-derived from the presence-reference on every build. Re-extraction only happens as a deliberate, Founder-approved step (v2/scripts/build_sage_assets.py: extract_avatar_canonical).",
     "derived_from": {
@@ -61,8 +75,8 @@
         "use_context": "compact_navigation_avatar"
       }
     },
-    "replacement_version_policy": "The canonical file is never overwritten silently. A replacement approved portrait gets a new canonical filename (e.g. sage_avatar_canonical_2027.png), the registry entry's canonical_source_path and checksum are updated in the same commit as the new file, and the prior canonical file is retained on disk (or in git history) for audit rather than deleted. Derivatives are always regenerated from whichever file is currently canonical -- never hand-edited, never derived from a prior derivative, never derived from SAGE-PRESENCE-REFERENCE-1 directly.",
-    "governance_note": "This registration records the image as Founder-approved for current use. It does not by itself establish a formal Sage Appearance Standard (a future SA-1 document) -- no such standard exists yet as of this entry, and none is implied here. SAGE_PERSONA.md (who Sage is), SVS-1 (how Sage sounds), this avatar asset (how Sage currently appears), and provider mappings (deployment detail) are tracked as distinct, non-merged identities."
+    "replacement_version_policy": "The canonical file is never overwritten silently, and per identity_change_policy above, is never replaced at all without explicit Founder approval. A replacement approved portrait gets a new canonical filename (e.g. sage_avatar_canonical_2027.png), the registry entry's canonical_source_path and checksum are updated in the same commit as the new file, and the prior canonical file is retained on disk (or in git history) for audit rather than deleted. Derivatives are always regenerated from whichever file is currently canonical -- never hand-edited, never derived from a prior derivative, never derived from SAGE-PRESENCE-REFERENCE-1 directly.",
+    "governance_note": "This registration records the image as Founder-approved for current use, and as a constitutional identity asset (see identity_change_policy). It does not by itself establish a formal Sage Appearance Standard (a future SA-1 document) -- no such standard exists yet as of this entry, and none is implied here. SAGE_PERSONA.md (who Sage is), SVS-1 (how Sage sounds), this avatar asset (how Sage currently appears), and provider mappings (deployment detail) are tracked as distinct, non-merged identities."
   },
   "SAGE-PRESENCE-REFERENCE-1": {
     "asset_id": "SAGE-PRESENCE-REFERENCE-1",
