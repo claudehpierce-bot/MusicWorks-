@@ -70,6 +70,12 @@ def render():
         render_html('<div class="mw-card" style="text-align:center;padding:2rem;color:#8A8480;">No Creative Brief for this campaign yet.</div>')
         return
 
+    import ui.sage as sage
+    sage.render_moment(
+        "creative_brief_intro", key=f"creative_brief_intro_{campaign_id}",
+        context_summary=campaign["song_title"],
+    )
+
     st.markdown(f"### {campaign['song_title']}")
     st.caption(f"Version {current['version']} · edited by {current.get('authored_by','')} · {current.get('created_at','')[:16].replace('T',' ')}")
 

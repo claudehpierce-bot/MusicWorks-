@@ -50,6 +50,32 @@ _STUDIO_NAV = [
 ]
 
 
+def _sage_nav_presence():
+    """Sage's compact avatar in the nav rail -- a calm, static, unnarrated
+    identity marker per DS-1 (she does not speak from every page load; her
+    narrated moments live at the specific workflow surfaces in
+    ui/sage.py::render_moment, called from Home, the Wizard, the Creative
+    Brief, and the Boardroom)."""
+    try:
+        import ui.sage as sage
+        avatar = sage.avatar_html("avatar_small", width=36)
+    except Exception:
+        return
+    if not avatar:
+        return
+
+    col_a, col_b = st.columns([1, 4])
+    with col_a:
+        render_html(avatar)
+    with col_b:
+        st.markdown(
+            "<div style='font-size:12px;color:#F0EDE8;font-weight:600;padding-top:6px;'>Sage</div>"
+            "<div style='font-size:9px;color:#6A6460;margin-top:-2px;'>Institutional Guide</div>",
+            unsafe_allow_html=True,
+        )
+    st.markdown("<div style='margin-bottom:0.5rem;'></div>", unsafe_allow_html=True)
+
+
 def nav_sidebar() -> str:
     """Render left navigation. Returns current page id."""
     if "studio_mode" not in st.session_state:
@@ -71,6 +97,8 @@ def nav_sidebar() -> str:
             </div>
         </div>
         """, unsafe_allow_html=True)
+
+        _sage_nav_presence()
 
         current = st.session_state.get("page", "home")
         studio_mode = st.session_state.studio_mode

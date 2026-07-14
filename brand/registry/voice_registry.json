@@ -1,0 +1,27 @@
+{
+  "SVS-1": {
+    "voice_standard": "SVS-1",
+    "subject": "Sage™",
+    "role": "Institutional Guide — canonical voice",
+    "status": "founder_approved",
+    "approved_date": "2026-07-14",
+    "constitutional_identity_asset": true,
+    "identity_change_policy": {
+      "rule": "SVS-1 is a constitutional identity asset, the voice counterpart to SAGE-AVATAR-1. Which voice SVS-1 resolves to may only change through explicit Founder approval.",
+      "permitted_without_founder_approval": [
+        "provider-side technical settings that do not change perceived identity (e.g. stability/similarity tuning within the approved voice)",
+        "caching, retry, and delivery mechanics"
+      ],
+      "requires_explicit_founder_approval": [
+        "changing which provider backs SVS-1",
+        "changing provider_voice_id",
+        "any change that would make Sage sound like a different person"
+      ]
+    },
+    "provider": "elevenlabs",
+    "provider_voice_id": "iClufiZuqgXWVCRt4s2o",
+    "provider_notes": "Application code must never reference provider_voice_id directly -- it asks the voice resolver for SVS-1 and the resolver returns the provider + provider_voice_id together. This keeps a future provider change (or a second product needing the same institutional voice) a one-line registry edit, not a code change.",
+    "tone_reference": "See brand/design_standards/SAGE_PERSONA.md — Voice Tone: warm, calm, confident, patient, knowledgeable, never rushed, never sales-like, never overly enthusiastic, never theatrical.",
+    "governance_note": "SVS-1 (how Sage sounds), SAGE-AVATAR-1 (how Sage looks), SAGE_PERSONA.md (who Sage is), and DS-1 (how she is presented) are tracked as distinct, non-merged identities. This registration does not alter any of the other three."
+  }
+}

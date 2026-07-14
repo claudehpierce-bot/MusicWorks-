@@ -24,6 +24,7 @@ v2/musicworks.db
 
 # Assets (generated - large binaries)
 v2/assets/
+v2/data/sage_voice_cache/
 
 # OS
 .DS_Store

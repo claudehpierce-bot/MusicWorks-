@@ -119,6 +119,23 @@ def _clear_draft():
             pass
 
 
+def get_draft_summary() -> dict | None:
+    """Public accessor for other pages (Home's Sage welcome, etc.) that need
+    to know whether an unfinished draft exists -- reuses this module's own
+    draft file and STEPS list rather than a second page re-reading
+    data/drafts/wizard_draft.json independently."""
+    draft = _load_draft()
+    if not draft or not (draft.get("title") or draft.get("artist_name")):
+        return None
+    last_step_idx = max(0, min(draft.get("_draft_step", 1) - 1, len(STEPS) - 1))
+    return {
+        "artist_name": draft.get("artist_name"),
+        "title": draft.get("title"),
+        "step_label": STEPS[last_step_idx],
+        "saved_label": _draft_last_saved_label(draft),
+    }
+
+
 def _autosave(step: int):
     """Save whatever is currently in wizard_data, tagged with the given resume
     step. Called on every rerun of a step (not just on Continue), so a crash,
@@ -192,6 +209,9 @@ def _handle_step_exception(exc: Exception, step: int):
 
 def _step_artist():
     st.markdown("### Step 1 — Choose Artist")
+
+    import ui.sage as sage
+    sage.render_moment("step_artist", key="wizard_step_artist")
 
     artists = list_artists()
 
@@ -304,10 +324,9 @@ def _step_creative_master():
     d = st.session_state.wizard_data
     st.markdown("### Step 2 — Upload Creative Master")
     st.caption(f"Artist: **{d.get('artist_name', '')}**")
-    st.caption(
-        "Upload the finished song. MusicWorks analyzes it immediately — this becomes "
-        "the foundation of every media asset in your campaign."
-    )
+
+    import ui.sage as sage
+    sage.render_moment("step_creative_master", key="wizard_step_creative_master")
 
     col_a, col_b = st.columns(2)
     analysis = None
@@ -420,6 +439,9 @@ def _step_details_lyrics():
 
     st.markdown("### Step 3 — Song Details & Lyrics")
     st.caption(f"Artist: **{d.get('artist_name', '')}**  ·  File: **{d.get('audio_file_name', '')}**")
+
+    import ui.sage as sage
+    sage.render_moment("step_lyrics", key="wizard_step_lyrics")
 
     col_a, col_b = st.columns(2)
     with col_a:
@@ -592,6 +614,9 @@ def _step_artwork():
     st.markdown("### Step 4 — Upload Artwork")
     st.caption("Upload visual assets. Album cover is required to continue.")
 
+    import ui.sage as sage
+    sage.render_moment("step_artwork", key="wizard_step_artwork")
+
     artist_id = d.get("artist_id", "unknown")
     ref_dir = ARTISTS_DIR / artist_id / "references"
     art_dir = ARTISTS_DIR / artist_id / "artwork"
@@ -708,6 +733,9 @@ def _step_release_info():
         "release actually stands and we'll only ask for what applies. Everything below "
         "except Release Status is optional — leave anything blank you don't have yet."
     )
+
+    import ui.sage as sage
+    sage.render_moment("step_release_info", key="wizard_step_release_info")
 
     status_idx = RELEASE_STATUS_OPTIONS.index(d["release_status"]) if d.get("release_status") in RELEASE_STATUS_OPTIONS else 0
     release_status = st.selectbox("Release status *", RELEASE_STATUS_OPTIONS, index=status_idx, key="ri_release_status")
@@ -1252,6 +1280,15 @@ def _render_campaign_ready(d: dict):
     artist_id = d.get("artist_id", "")
     media_campaign_id = st.session_state.get("wizard_media_campaign_id", "")
 
+    if artist_id and media_campaign_id:
+        from execution.department_map import department_status as _dept_status_preview
+        pending = [r["label"] for r in _dept_status_preview(artist_id, media_campaign_id) if r["status"] == "Still in progress"]
+        import ui.sage as sage
+        sage.render_moment(
+            "boardroom_intro", key=f"wizard_boardroom_{media_campaign_id}",
+            context_summary=d.get("title", ""), pending_departments=pending,
+        )
+
     render_html(f"""
     <div style="background:linear-gradient(135deg, #0A2A1A, #0D3D20);
                 border:1px solid rgba(34,197,94,0.3); border-radius:16px;
@@ -1367,6 +1404,13 @@ def render():
         if draft and (draft.get("title") or draft.get("artist_name")):
             last_step_idx = max(0, min(draft.get("_draft_step", 1) - 1, len(STEPS) - 1))
             saved_label = _draft_last_saved_label(draft)
+
+            import ui.sage as sage
+            sage.render_moment(
+                "draft_recovery", key="wizard_draft_recovery",
+                context_summary=draft.get("title") or draft.get("artist_name") or "",
+            )
+
             render_html(f"""
             <div class="mw-card" style="padding:1.5rem 1.75rem; margin-bottom:1rem;
                         border-left:3px solid #22C55E; background:linear-gradient(135deg, #0A2A1A22, #0D3D2022);">

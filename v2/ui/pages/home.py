@@ -127,6 +127,36 @@ def _release_snapshot():
             navigate_to("analytics")
 
 
+def _sage_presence():
+    """Sage's home-panel welcome -- narrated from real state only (an
+    in-progress Wizard draft if one exists), never invented. Reuses
+    wizard.py's own draft accessor rather than re-reading the draft file
+    a second way."""
+    import ui.sage as sage
+
+    draft = None
+    try:
+        from ui.pages.wizard import get_draft_summary
+        draft = get_draft_summary()
+    except Exception:
+        pass
+
+    artist_name = draft["artist_name"] if draft else "Fire & Flow Gospel"
+    draft_title = draft["title"] if draft else None
+    draft_step_label = draft["step_label"] if draft else None
+
+    sage.render_moment(
+        "welcome",
+        key="home_welcome",
+        context_summary=artist_name or "",
+        artist_name=artist_name,
+        draft_title=draft_title,
+        draft_step_label=draft_step_label,
+    )
+    sage.render_history_panel(key="home_history")
+    st.markdown("<div style='height:1rem;'></div>", unsafe_allow_html=True)
+
+
 def render():
     # ── Greeting ──────────────────────────────────────────────────────────────
     hour     = datetime.now().hour
@@ -140,6 +170,8 @@ def render():
         f'Create the music. We\'ll build the movement.</p>'
         f'</div>'
     )
+
+    _sage_presence()
 
     # ── Hero: Launch a Media Campaign (primary CTA) ───────────────────────────
     render_html(_action_card(

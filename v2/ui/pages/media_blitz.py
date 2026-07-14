@@ -94,6 +94,19 @@ def render():
     _status_badge(status)
     st.markdown("<div style='height:0.75rem;'></div>", unsafe_allow_html=True)
 
+    if status == "ready_to_launch":
+        import ui.sage as sage
+        sage.render_moment(
+            "campaign_operations_ready", key=f"campaign_operations_ready_{campaign_id}",
+            context_summary=campaign["song_title"],
+        )
+    elif status == "completed":
+        import ui.sage as sage
+        sage.render_moment(
+            "campaign_completion", key=f"campaign_completion_{campaign_id}",
+            context_summary=campaign["song_title"], song_title=campaign["song_title"],
+        )
+
     stats = queue_stats(artist_id, campaign_id=campaign_id)
     m1, m2, m3, m4 = st.columns(4)
     m1.metric("Total Assets", stats["total"])
