@@ -1,0 +1,107 @@
+{
+  "SAGE-AVATAR-1": {
+    "asset_id": "SAGE-AVATAR-1",
+    "subject": "Sage™",
+    "role": "Institutional Guide — canonical portrait",
+    "status": "founder_approved",
+    "approved_date": "2026-07-14",
+    "reusable_ui_asset": true,
+    "canonical_source_path": "brand/assets/sage/avatar/sage_avatar_canonical_2026.png",
+    "canonical_notes": "Sage's isolated portrait, losslessly cropped from SAGE-PRESENCE-REFERENCE-1's source and saved as its own PNG master. This IS the canonical file going forward -- it is not re-derived from the presence-reference on every build. Re-extraction only happens as a deliberate, Founder-approved step (v2/scripts/build_sage_assets.py: extract_avatar_canonical).",
+    "derived_from": {
+      "asset_id": "SAGE-PRESENCE-REFERENCE-1",
+      "crop_box": [224, 16, 622, 580],
+      "extraction_method": "Lossless pixel-exact crop (no resampling), documented as a fixed constant in v2/scripts/build_sage_assets.py -- not recomputed at build time."
+    },
+    "dimensions": { "width": 398, "height": 564 },
+    "aspect_ratio": "398:564",
+    "checksum_sha256": "7b783bfa5a00db77686a043867f5c32edd69a3ef711abf56f6eb41fc05e7f1e2",
+    "accessibility_description": "Sage, MindSpark Labs’ institutional guide, wearing a navy executive suit with gold MindSpark insignia.",
+    "approved_use_contexts": [
+      "sage_presence_home_panel",
+      "compact_navigation_avatar",
+      "speaking_waveform_panel",
+      "guidance_history",
+      "conversational_panel",
+      "empty_state_guidance_cards"
+    ],
+    "prohibited_modifications": [
+      "facial_identity",
+      "hairstyle",
+      "expression",
+      "skin_tone",
+      "executive_presentation",
+      "jewelry",
+      "insignia",
+      "overall_visual_character"
+    ],
+    "derivatives": {
+      "portrait_medium": {
+        "filename": "sage_portrait_medium.webp",
+        "path": "brand/assets/sage/avatar/derivatives/sage_portrait_medium.webp",
+        "dimensions": { "width": 480, "height": 680 },
+        "format": "webp",
+        "source_region": "full canonical frame",
+        "use_context": "sage_presence_home_panel"
+      },
+      "avatar_square": {
+        "filename": "sage_avatar_square.webp",
+        "path": "brand/assets/sage/avatar/derivatives/sage_avatar_square.webp",
+        "dimensions": { "width": 320, "height": 320 },
+        "format": "webp",
+        "source_region": "top square subset of canonical frame",
+        "use_context": "conversational_panel, guidance_history"
+      },
+      "avatar_small": {
+        "filename": "sage_avatar_small.webp",
+        "path": "brand/assets/sage/avatar/derivatives/sage_avatar_small.webp",
+        "dimensions": { "width": 96, "height": 96 },
+        "format": "webp",
+        "source_region": "top square subset of canonical frame",
+        "use_context": "compact_navigation_avatar"
+      }
+    },
+    "replacement_version_policy": "The canonical file is never overwritten silently. A replacement approved portrait gets a new canonical filename (e.g. sage_avatar_canonical_2027.png), the registry entry's canonical_source_path and checksum are updated in the same commit as the new file, and the prior canonical file is retained on disk (or in git history) for audit rather than deleted. Derivatives are always regenerated from whichever file is currently canonical -- never hand-edited, never derived from a prior derivative, never derived from SAGE-PRESENCE-REFERENCE-1 directly.",
+    "governance_note": "This registration records the image as Founder-approved for current use. It does not by itself establish a formal Sage Appearance Standard (a future SA-1 document) -- no such standard exists yet as of this entry, and none is implied here. SAGE_PERSONA.md (who Sage is), SVS-1 (how Sage sounds), this avatar asset (how Sage currently appears), and provider mappings (deployment detail) are tracked as distinct, non-merged identities."
+  },
+  "SAGE-PRESENCE-REFERENCE-1": {
+    "asset_id": "SAGE-PRESENCE-REFERENCE-1",
+    "subject": "MusicWorks™ Sage Presence — design-language reference",
+    "role": "Design reference — NOT a reusable UI asset",
+    "status": "founder_approved",
+    "approved_date": "2026-07-14",
+    "reusable_ui_asset": false,
+    "canonical_source_path": "brand/assets/sage/presence_reference/sage_presence_reference_2026.png",
+    "canonical_notes": "The original Founder-approved composed mockup, preserved byte-for-byte exactly as received. Governs visual direction only -- do not crop UI components, icons, or button chrome out of this file for production use, and do not register derivatives against it as reusable assets. SAGE-AVATAR-1's canonical portrait was isolated from this source once (see that entry's derived_from field) as a deliberate one-time promotion, not an ongoing dependency.",
+    "dimensions": { "width": 1402, "height": 1122 },
+    "aspect_ratio": "1402:1122",
+    "checksum_sha256": "c00451aa3c05b1c8e0ee1fa873d836986ebb854db62835ee06b0dca4466d363c",
+    "accessibility_description": "Design reference composition for the MusicWorks Sage presence interface: a portrait panel beside a speaking/transcript panel with playback controls, a waveform, guidance cards, and supporting navigation chrome, used to guide layout, spacing, typography, palette, proportions, visual hierarchy, and interaction language for Sage-related screens.",
+    "defines": [
+      "layout",
+      "spacing",
+      "typography",
+      "palette",
+      "proportions",
+      "visual_hierarchy",
+      "interaction_language"
+    ],
+    "approved_use_contexts": [
+      "design_reference_only"
+    ],
+    "prohibited_modifications": [
+      "facial_identity",
+      "hairstyle",
+      "expression",
+      "skin_tone",
+      "executive_presentation",
+      "jewelry",
+      "insignia",
+      "overall_visual_character",
+      "extraction_of_ui_chrome_as_production_assets"
+    ],
+    "derivatives": {},
+    "replacement_version_policy": "Same policy as SAGE-AVATAR-1: never silently overwritten; a replacement reference gets a new canonical filename and the registry is updated in the same commit; prior versions retained for audit.",
+    "governance_note": "This is a design-language reference, not Sage's identity asset. It intentionally has no derivatives and is not eligible for approved_use_contexts beyond design_reference_only. Application UI must never resolve this asset ID for a rendered avatar, icon, or button -- that guardrail is enforced in v2/tests/test_brand_assets.py."
+  }
+}
