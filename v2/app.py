@@ -43,6 +43,11 @@ def _bootstrap_demo():
 _bootstrap_secrets()
 _bootstrap_demo()
 
+# Sage first-arrival fix: must run before any page renders, on every single
+# script execution -- see ui/sage.py::begin_script_run() for why.
+import ui.sage as _sage
+_sage.begin_script_run()
+
 inject_styles()
 page = nav_sidebar()
 

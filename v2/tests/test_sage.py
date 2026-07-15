@@ -97,6 +97,71 @@ def run():
     finally:
         prefs.PREFS_PATH = orig_prefs_path
 
+    # ── First-arrival playback fix: state-machine correctness ────────────────
+    # Real audio can't be exercised here (no ElevenLabs key in this dev
+    # environment), so sage_voice.synthesize is monkeypatched to return
+    # deterministic fake bytes -- what's under test is the queue/catch-up
+    # logic in ui/sage.py, not the network call itself (already covered above).
+    import streamlit as st
+    import ui.sage as sage
+    from execution.sage import voice as sage_voice_mod
+
+    def _reset_session():
+        for k in list(st.session_state.keys()):
+            if k.startswith("sage_"):
+                del st.session_state[k]
+
+    orig_synthesize = sage_voice_mod.synthesize
+    sage_voice_mod.synthesize = lambda text, voice_standard="SVS-1": b"FAKE_AUDIO_BYTES"
+    orig_history_path = history.HISTORY_PATH
+    history_tmpdir = tempfile.TemporaryDirectory()
+    history.HISTORY_PATH = Path(history_tmpdir.name) / "history.json"
+    try:
+        # Execution 1: fresh session, first render, welcome wants to speak.
+        _reset_session()
+        sage.begin_script_run()
+        check("execution 1 is not treated as an interaction", st.session_state.get("sage_had_interaction") is False)
+        rendered = sage.render_moment("welcome", key="home_welcome", artist_name="Fire & Flow Gospel", draft_title=None, draft_step_label=None)
+        check("welcome still renders (transcript) on execution 1", rendered is True)
+        check("welcome's audio is queued, not played, before any interaction",
+              st.session_state.get("sage_pending_first_greeting", {}).get("key") == "home_welcome")
+        check("first_greeting_played is not set yet", not st.session_state.get("sage_first_greeting_played"))
+
+        # Execution 2: a real interaction happens (e.g. clicking Launch
+        # Campaign) -- begin_script_run() should catch the pending welcome
+        # up before the destination page renders its own moment.
+        sage.begin_script_run()
+        check("execution 2 is treated as a real interaction", st.session_state.get("sage_had_interaction") is True)
+        check("pending welcome was consumed by catch-up", "sage_pending_first_greeting" not in st.session_state)
+        check("first_greeting_played is now set", st.session_state.get("sage_first_greeting_played") is True)
+        check("catch-up used this run's one audio slot", st.session_state.get("sage_audio_slot_used_this_run") is True)
+
+        # The destination page's own moment (e.g. Wizard step_artist) also
+        # wants to speak this same run -- it must NOT overlap the welcome;
+        # it should be held as the new pending moment instead.
+        sage.render_moment("step_artist", key="wizard_step_artist")
+        check("a second moment in the same run doesn't overlap the catch-up",
+              st.session_state.get("sage_pending_first_greeting", {}).get("key") == "wizard_step_artist")
+
+        # Execution 3: next interaction -- the deferred step_artist moment
+        # gets its turn, with no welcome left to compete with.
+        sage.begin_script_run()
+        check("the deferred second moment gets caught up on the next interaction",
+              st.session_state.get("sage_last_played_message_id") == "wizard_step_artist")
+
+        # Muted session: nothing should ever be queued.
+        _reset_session()
+        sage.begin_script_run()
+        sage._toggle_mute()  # mutes
+        sage.render_moment("welcome", key="home_welcome", artist_name="Fire & Flow Gospel", draft_title=None, draft_step_label=None)
+        check("muted session never queues a pending greeting", "sage_pending_first_greeting" not in st.session_state)
+        sage._toggle_mute()  # restore unmuted for any later tests reusing prefs
+    finally:
+        sage_voice_mod.synthesize = orig_synthesize
+        history.HISTORY_PATH = orig_history_path
+        history_tmpdir.cleanup()
+        _reset_session()
+
     print()
     passed = sum(1 for _, ok, _ in results if ok)
     total = len(results)

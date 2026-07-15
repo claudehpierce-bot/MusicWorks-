@@ -35,6 +35,49 @@ def _toggle_mute():
     prefs.set_muted(new_val)
 
 
+# ── First-arrival playback fix ───────────────────────────────────────────────
+#
+# Browsers block audio autoplay until the page has seen a real user gesture.
+# The very first script execution of a session (Home, before any click) can
+# never reliably play sound -- no gesture has happened yet. Every execution
+# after that one is, by construction, the result of a widget interaction (a
+# click) or an st.rerun() called from inside one; Streamlit has no "passive"
+# reruns of its own. So "has at least one prior execution completed" is
+# exactly the signal for "a real interaction has now happened."
+#
+# begin_script_run() must be called once, at the very top of app.py, before
+# any page renders. It marks whether this execution is the first one, and if
+# not, catches up whichever Sage moment was left pending from before -- this
+# is the entire mechanism; no general event system, just one deferred slot.
+
+def begin_script_run():
+    """Call once per script execution, before any page content renders."""
+    had_prior_run = "sage_run_marker" in st.session_state
+    st.session_state["sage_run_marker"] = True
+    st.session_state["sage_had_interaction"] = had_prior_run
+    st.session_state["sage_audio_slot_used_this_run"] = False
+    if had_prior_run:
+        _catch_up_pending_greeting()
+
+
+def _catch_up_pending_greeting():
+    """If a moment was queued because no interaction had happened yet, and
+    a real interaction has now occurred, speak it -- once, here, before the
+    destination page renders its own moment. Muted founders never had
+    anything queued in the first place (render_moment() only queues when
+    unmuted), so there's nothing to silently play here."""
+    pending = st.session_state.pop("sage_pending_first_greeting", None)
+    if not pending or _is_muted():
+        return
+    audio_bytes = sage_voice.synthesize(pending["transcript"])
+    if audio_bytes:
+        render_html(_autoplay_audio_html(audio_bytes))
+        st.session_state["sage_audio_slot_used_this_run"] = True
+        st.session_state["sage_last_played_message_id"] = pending["key"]
+        if pending["key"] == "home_welcome":
+            st.session_state["sage_first_greeting_played"] = True
+
+
 def avatar_html(variant: str = "avatar_square", width: int = 64) -> str:
     """The one accessible way to render Sage's avatar anywhere in the app.
 
@@ -219,19 +262,35 @@ def render_moment(moment: str, key: str, context_summary: str = "", **context) -
     should_speak_audio = is_first_time or st.session_state.pop(repeat_flag, False)
 
     muted = _is_muted()
+    # First-arrival fix: only actually attempt audio once a real interaction
+    # has happened in this session, and only if no other moment already used
+    # this run's one audio turn (see begin_script_run() / _catch_up_pending_
+    # greeting() above). Otherwise this moment is held as the pending one,
+    # to be spoken the instant an interaction occurs -- never lost, never
+    # played into a browser autoplay block, never overlapping another.
+    had_interaction = st.session_state.get("sage_had_interaction", False)
+    slot_used = st.session_state.get("sage_audio_slot_used_this_run", False)
+    can_use_audio_slot = should_speak_audio and not muted and had_interaction and not slot_used
+
     # TEMPORARY (Sage Voice Diagnostics): in Studio Mode, capture the full
     # diagnostics dict from the same real call Creator Mode makes -- one
     # implementation (_synthesize_core), never a second parallel path.
     studio_mode = bool(st.session_state.get("studio_mode"))
     diag = None
-    if should_speak_audio and not muted:
+    audio_bytes = None
+    if can_use_audio_slot:
         if studio_mode:
             diag = sage_voice._synthesize_core(transcript)
             audio_bytes = diag["audio_bytes"]
         else:
             audio_bytes = sage_voice.synthesize(transcript)
-    else:
-        audio_bytes = None
+        if audio_bytes:
+            st.session_state["sage_audio_slot_used_this_run"] = True
+            st.session_state["sage_last_played_message_id"] = key
+            if key == "home_welcome":
+                st.session_state["sage_first_greeting_played"] = True
+    elif should_speak_audio and not muted:
+        st.session_state.setdefault("sage_pending_first_greeting", {"key": key, "transcript": transcript})
 
     st.markdown(_WAVEFORM_CSS, unsafe_allow_html=True)
 
