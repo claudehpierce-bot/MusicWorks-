@@ -347,7 +347,11 @@ class RenderOrchestrator:
                 artist_id, campaign_id, pairing["reviewer"], target,
                 result["rating"], result["verdict"], job_ids,
             )
-            printer(f"    {REVIEWER_LABELS.get(pairing['reviewer'], pairing['reviewer'])} rated {REGEN_GROUPS[target]['label']}: {result['rating']}/5")
+            # Constitutional Integrity Patch, P0: the founder-visible build log
+            # shows the real verdict, never a bare "X/5" -- same reasoning as
+            # the Boardroom's _RATING_OBSERVATION headlines (wizard.py).
+            reviewer_label = REVIEWER_LABELS.get(pairing["reviewer"], pairing["reviewer"])
+            printer(f"    {reviewer_label} reviewed {REGEN_GROUPS[target]['label']}: {result['verdict']}")
 
     def review_group(self, artist_id: str, campaign_id: str, target: str, printer=print) -> None:
         """Re-runs only the review pairings targeting one regen group. Called

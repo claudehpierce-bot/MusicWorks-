@@ -83,10 +83,14 @@ def department_rating(artist_id: str, campaign_id: str, department: str) -> dict
 
     all_reviews = review_store.get_reviews(artist_id, campaign_id)
     relevant = [r for r in all_reviews.values() if r["target"] in groups]
-    if not relevant:
+    # A review whose rating is None (parse failure -- see agents/review_agent.py)
+    # was never actually scored; it must not silently win "worst" by comparing
+    # as if it were real.
+    ratable = [r for r in relevant if r.get("rating") is not None]
+    if not ratable:
         return None
 
-    worst = min(relevant, key=lambda r: r["rating"])
+    worst = min(ratable, key=lambda r: r["rating"])
     return {"rating": worst["rating"], "verdict": worst["verdict"], "reviewer": worst["reviewer"]}
 
 

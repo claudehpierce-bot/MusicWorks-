@@ -23,9 +23,18 @@ def compute_health(artist_id: str, campaign_id: str) -> dict:
 
     approval_rate = round(approved / total * 100) if total else None
 
-    ratings = [r["rating"] for r in reviews.values()]
-    avg_rating = round(sum(ratings) / len(ratings), 1) if ratings else None
-    worst = min(reviews.values(), key=lambda r: r["rating"]) if reviews else None
+    # Constitutional Integrity Patch, P0: no averaged score. Averaging
+    # single-pass subjective 1-5 judgments and presenting it as "3.5/5"
+    # implies a precision the underlying reviews don't carry (same reasoning
+    # already applied to the Boardroom's _RATING_OBSERVATION headlines in
+    # wizard.py). What's real and countable instead: how many of the
+    # reviews that actually completed came back at full alignment.
+    # Reviews with rating=None (a failed/incomplete review) are excluded --
+    # they were never scored, not scored zero.
+    scored = [r for r in reviews.values() if r.get("rating") is not None]
+    reviewed_count = len(scored)
+    full_alignment_count = sum(1 for r in scored if r["rating"] == 5)
+    worst = min(scored, key=lambda r: r["rating"]) if scored else None
 
     oldest_review_days = None
     now = datetime.now(timezone.utc)
@@ -47,7 +56,8 @@ def compute_health(artist_id: str, campaign_id: str) -> dict:
         "in_review_count": in_review,
         "regenerated_count": regenerated,
         "approval_rate": approval_rate,
-        "avg_rating": avg_rating,
+        "reviewed_count": reviewed_count,
+        "full_alignment_count": full_alignment_count,
         "worst_rating": worst["rating"] if worst else None,
         "worst_verdict": worst["verdict"] if worst else None,
         "worst_target": worst["target"] if worst else None,

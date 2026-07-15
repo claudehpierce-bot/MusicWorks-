@@ -12,7 +12,14 @@ from contracts.models import CampaignPlan
 
 CAMPAIGN_OUTPUT = {
     "campaign_id": "hlangana-blitz-launch-001",
-    "campaign_name": "HLANGANA — Kingdom Word Short #001 Launch",
+    # Constitutional Integrity Patch, P2: "Kingdom Word Short #001" is real
+    # editorial content-series language (see the blog/caption copy below,
+    # which explains what the series is) -- but as a bare campaign_name
+    # label on the Boardroom and build-progress screens, with no room for
+    # that explanation, it read as unexplained internal jargon to a
+    # first-time founder. The name itself is now plain; "Kingdom Words" as
+    # a concept is untouched everywhere it's actually explained in context.
+    "campaign_name": "HLANGANA — Launch Campaign",
     "campaign_mode": "blitz",
     "campaign_goal": (
         "Introduce the word HLANGANA and the Kingdom Words series to new audiences "

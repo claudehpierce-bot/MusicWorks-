@@ -74,14 +74,26 @@ def analyze_audio(file_bytes: bytes, filename: str) -> AudioAnalysis:
 def suggest_deliverables(hook_count: int, duration_seconds: Optional[int],
                           campaign_mode: str = "standard") -> dict:
     """Deterministic formula deriving suggested asset counts from the
-    Creative Master's detected hooks, length, and campaign strategy."""
-    hooks = max(3, min(hook_count or 6, 12))
+    Creative Master's detected hooks, length, and campaign strategy.
+
+    `hook_count` is the REAL number of hooks found by waveform analysis --
+    0 when analysis didn't run for this file (e.g. an MP3 upload) or found
+    none. That real count is returned verbatim as `detected_hooks`; it is
+    never padded or defaulted, because a founder-visible metric must not
+    claim a measurement that didn't happen (Constitutional Integrity Patch,
+    P0). The suggestion formula below still needs *some* number to size
+    the campaign around when there's no real hook count -- `sizing_basis`
+    is that internal fallback, and it is deliberately never returned under
+    a name that implies it was detected.
+    """
+    real_hooks = hook_count or 0
+    sizing_basis = max(3, min(hook_count if hook_count else 6, 12))
     minutes = (duration_seconds or 210) / 60
     mult = MODE_MULTIPLIER.get(campaign_mode, 1.0)
 
-    shorts = max(4, round(hooks * 1.25 * mult))
-    reels = max(3, round(hooks * 1.0 * mult))
-    quote_cards = max(6, round(hooks * 1.5 * mult))
+    shorts = max(4, round(sizing_basis * 1.25 * mult))
+    reels = max(3, round(sizing_basis * 1.0 * mult))
+    quote_cards = max(6, round(sizing_basis * 1.5 * mult))
     blog_articles = max(2, round(minutes / 1.3))
     devotionals = max(2, round(minutes * mult))
     video_concepts = 3
@@ -89,7 +101,7 @@ def suggest_deliverables(hook_count: int, duration_seconds: Optional[int],
     total = shorts + reels + quote_cards + blog_articles + devotionals + video_concepts + FIXED_EVERGREEN_ASSETS
 
     return {
-        "detected_hooks": hooks,
+        "detected_hooks": real_hooks,
         "suggested_shorts": shorts,
         "suggested_reels": reels,
         "suggested_quote_cards": quote_cards,

@@ -34,38 +34,45 @@ Rate how well this work matches the Live Creative Brief through the lens of {len
 
     result = call_claude(system_prompt, user_message, max_tokens=300, brand_context=brand_context)
 
+    # Constitutional Integrity Patch, P0: a failed review must never be
+    # stored as a fabricated "neutral" rating -- None means "not reviewed,"
+    # not "reviewed and scored 3." Callers/aggregators treat None as
+    # excluded from any count or comparison, the same way department_map.py
+    # already treats "no review yet" as None rather than inventing one.
     if result.get("parse_error"):
-        return {"rating": 3, "verdict": "Review could not be completed — treated as neutral.", "parse_error": True}
+        return {"rating": None, "verdict": "Review could not be completed — try again.", "parse_error": True}
 
-    rating = result.get("rating", 3)
+    rating = result.get("rating")
     try:
         rating = max(1, min(5, int(rating)))
     except (TypeError, ValueError):
-        rating = 3
+        rating = None
     return {"rating": rating, "verdict": result.get("verdict", "")}
 
 
 def mock_rating(target: str, brief: dict) -> dict:
-    """Deterministic mock signal — not a hash, not random. Scores by how
-    complete the Brief actually is for this target's relevant fields (per
-    execution/review_dependencies.relevant_brief_fields), so a thin Brief
-    scores lower than a fully-fleshed-out one. Matches agents/mock_data.py's
-    existing all-static, no-randomness convention, and deliberately avoids
-    an "always five stars" Boardroom (V7 Phase 2 risk notes)."""
+    """Preview-mode signal, used only when no live review model is
+    configured. This does NOT look at the department's actual generated
+    content -- there is no Claude call in preview mode to judge it with
+    (see orchestrator.py: content is fetched but never passed in here).
+    It measures one real, checkable thing instead: how much of the Brief
+    actually gives this department direction (per
+    execution/review_dependencies.relevant_brief_fields). The verdict text
+    says exactly that, on purpose (Constitutional Integrity Patch, P1) --
+    it must never read as "the work matches the Brief," because no work
+    was ever compared to anything here. Deterministic, not random."""
     fields = relevant_brief_fields(target)
     if not fields:
-        return {"rating": 5, "verdict": "Nothing in the Brief to check this against."}
+        return {"rating": None, "verdict": "Nothing in the Brief guides this department yet.", "basis": "brief_completeness"}
 
     substantive = sum(1 for f in fields if len((brief or {}).get(f, "") or "") >= 15)
     ratio = substantive / len(fields)
-    rating = max(2, min(5, round(2 + ratio * 3)))
+    rating = max(2, min(5, round(2 + ratio * 3)))  # kept only to rank "worst first" in department_rating()
 
-    if rating >= 5:
-        verdict = "Fully matches the Brief."
-    elif rating >= 4:
-        verdict = "Matches the Brief well — one or two fields could be more specific."
-    elif rating >= 3:
-        verdict = "Generally on-brief, but several relevant Brief fields are thin."
+    if substantive == len(fields):
+        verdict = f"All {len(fields)} relevant Brief fields have real direction for this department."
+    elif substantive > 0:
+        verdict = f"{substantive} of {len(fields)} relevant Brief fields have real direction; the rest are still thin."
     else:
-        verdict = "Several Brief fields this work should be following are empty or too thin to guide it."
-    return {"rating": rating, "verdict": verdict}
+        verdict = f"None of the {len(fields)} relevant Brief fields have real direction yet."
+    return {"rating": rating, "verdict": verdict, "basis": "brief_completeness"}

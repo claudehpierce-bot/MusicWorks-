@@ -221,7 +221,6 @@ def _render_v4_publish_section():
             checklist_txt = "".join(checklist_lines)
 
             st.success(f"✓ {len(approved)} asset(s) added to Publish Queue! Scheduled for {schedule_str}.")
-            st.balloons()
 
             dl_col, back_col = st.columns([1, 1])
             with dl_col:

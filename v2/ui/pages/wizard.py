@@ -881,20 +881,32 @@ def _step_analysis():
     duration = d.get("duration_seconds") or analysis.get("duration_seconds")
     mode = d.get("mode", "blitz")
 
+    # Real evidence gate (Constitutional Integrity Patch, P0): waveform
+    # analysis actually ran and found hooks only when the source says so.
+    # An MP3/degraded upload has hooks_measured == False, and no founder-
+    # visible metric here is allowed to imply a measurement that didn't
+    # happen -- see suggest_deliverables()'s docstring for the matching
+    # backend-side fix.
+    hooks_measured = analysis.get("source") == "waveform_analysis" and len(hooks) > 0
+
     from execution.audio_analysis import suggest_deliverables
     suggestions = suggest_deliverables(len(hooks), duration, mode)
 
     st.markdown("<div class='mw-section-label'>Creative Analysis Complete</div>", unsafe_allow_html=True)
-    st.caption("Creative analysis estimate — based on your Creative Master's waveform. Edit anything in earlier steps and these numbers update.")
+    if hooks_measured:
+        st.caption("Creative analysis estimate — based on your Creative Master's waveform. Edit anything in earlier steps and these numbers update.")
+    else:
+        st.caption("Song length is read from your upload. Hooks, mood, and energy need a WAV file to measure — the asset counts below use a standard baseline, not this song's actual structure, until you upload one.")
 
     dur_val = duration or 0
     m1, m2, m3, m4 = st.columns(4)
     m1.metric("Song Length", f"{dur_val // 60}:{dur_val % 60:02d}")
-    m2.metric("Detected Hooks", suggestions["detected_hooks"])
+    m2.metric("Detected Hooks", suggestions["detected_hooks"] if hooks_measured else "Not measured")
     m3.metric("Mood", ", ".join(analysis.get("mood_tags") or d.get("mood") or ["—"]))
     m4.metric("Energy", (analysis.get("energy_level") or "—").title())
 
     st.markdown("<div style='margin-top:1rem;'></div>", unsafe_allow_html=True)
+    st.caption("Suggested asset counts" if hooks_measured else "Suggested asset counts — standard baseline (song structure not measured)")
     d1, d2, d3, d4, d5, d6 = st.columns(6)
     d1.metric("Shorts", suggestions["suggested_shorts"])
     d2.metric("Reels", suggestions["suggested_reels"])
@@ -1069,7 +1081,6 @@ def _step_launch():
             campaign_id = _run_campaign_build(d, st.session_state.wizard_mock_override)
             if campaign_id:
                 st.session_state.wizard_campaign_id = campaign_id
-                st.balloons()
                 st.rerun()
 
 
@@ -1274,6 +1285,19 @@ _OPERATIONS_STATUS_COPY = {
     "relaunch_ready":         "Ready to relaunch or extend.",
 }
 
+# Constitutional Integrity Patch, P1 -- an observation headline, not a
+# grade. The number still exists internally (department_map.py uses it to
+# rank "worst review wins" across a department's regen groups) but a
+# founder never sees it as a score; they see this sentence plus the real
+# reason underneath it.
+_RATING_OBSERVATION = {
+    5: "Strong alignment with the approved Creative Brief.",
+    4: "Good alignment with the Brief — minor refinement possible.",
+    3: "Partial alignment — some Brief direction is still missing.",
+    2: "Limited alignment — this department needs more direction from the Brief.",
+    1: "Not yet aligned with the Brief.",
+}
+
 
 def _render_campaign_ready(d: dict):
     campaign_id = st.session_state.wizard_campaign_id
@@ -1325,13 +1349,21 @@ def _render_campaign_ready(d: dict):
 
         for dept in dept_rows:
             if dept.get("rating"):
-                stars = "★" * dept["rating"] + "☆" * (5 - dept["rating"])
-                note = dept.get("verdict") or dept["status"]
-                note_html = f'<span style="font-family:ui-monospace,monospace;color:#D4A853;letter-spacing:0.06em;">{stars}</span> <span style="font-size:12px;color:#C8BEEA;">{note}</span>'
+                # Constitutional Integrity Patch, P1: an observation, not a
+                # grade. Stars implied a precision of judgment that neither
+                # the preview-mode Brief-completeness signal nor a live
+                # review score actually carries -- the reason underneath
+                # is the real evidence, so it leads.
+                headline = _RATING_OBSERVATION.get(dept["rating"], "Reviewed against the Creative Brief.")
+                reason = dept.get("verdict") or dept["status"]
+                note_html = (
+                    f'<div style="font-size:13px;color:#F0EDE8;">{headline}</div>'
+                    f'<div style="font-size:12px;color:#C8BEEA;margin-top:2px;">Reason: {reason}</div>'
+                )
             else:
                 note_html = f'<span style="font-size:13px;color:#C8BEEA;">{dept["status"]}</span>'
             rows_html += (
-                '<div style="display:flex;align-items:center;justify-content:space-between;'
+                '<div style="display:flex;align-items:flex-start;justify-content:space-between;'
                 'padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.14);gap:1rem;">'
                 f'<span style="font-family:Georgia,serif;font-size:15px;color:#F0EDE8;white-space:nowrap;">{dept["icon"]} {dept["label"]}</span>'
                 f'<span style="text-align:right;">{note_html}</span></div>'

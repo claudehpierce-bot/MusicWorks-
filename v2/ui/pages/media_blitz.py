@@ -128,8 +128,9 @@ def render():
             rate = health["approval_rate"]
             st.metric("Approval Rate", f"{rate}%" if rate is not None else "—")
         with h2:
-            avg = health["avg_rating"]
-            st.metric("Avg. Review Score", f"{avg}/5" if avg is not None else "Not reviewed yet")
+            reviewed = health["reviewed_count"]
+            full = health["full_alignment_count"]
+            st.metric("Full Brief Alignment", f"{full} of {reviewed}" if reviewed else "Not reviewed yet")
         with h3:
             st.metric("Needed a Redo", health["regenerated_count"])
 

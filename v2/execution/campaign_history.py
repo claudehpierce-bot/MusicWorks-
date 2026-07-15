@@ -62,7 +62,7 @@ def record_completion(artist_id: str, campaign_id: str) -> bool:
 
     # Every real review verdict that flagged something -- not every review,
     # only the ones that weren't a perfect match.
-    imperfect_reviews = [r for r in reviews.values() if r["rating"] < 5]
+    imperfect_reviews = [r for r in reviews.values() if r.get("rating") is not None and r["rating"] < 5]
     lessons_learned = [
         f"{REVIEWER_LABELS.get(r['reviewer'], r['reviewer'])} on {r['target']}: {r['verdict']}"
         for r in imperfect_reviews
@@ -79,7 +79,7 @@ def record_completion(artist_id: str, campaign_id: str) -> bool:
     # Mechanically derived from the lowest ratings, not a new fabricated
     # opinion -- the same real verdicts, reframed forward-looking.
     recommendations = [
-        f"Next time: address — {r['verdict']}" for r in reviews.values() if r["rating"] <= 3
+        f"Next time: address — {r['verdict']}" for r in reviews.values() if r.get("rating") is not None and r["rating"] <= 3
     ]
 
     memory = {
