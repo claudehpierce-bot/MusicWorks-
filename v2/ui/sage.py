@@ -134,108 +134,6 @@ def _autoplay_audio_html(audio_bytes: bytes) -> str:
     return f'<audio autoplay style="display:none;"><source src="data:audio/mpeg;base64,{b64}"></audio>'
 
 
-# ── TEMPORARY -- Sage Voice Diagnostics™. Studio Mode only. Remove this
-# whole block (down to the end of _render_voice_diagnostics) once the
-# silent-speech root cause is confirmed. Never used in Creator Mode. ───────
-
-_DIAG_CACHE_LABELS = {
-    "fresh": "Fresh synthesis",
-    "cached": "Cached synthesis",
-    "invalidated": "Cache invalidated",
-    "bypassed": "Cache bypassed (diagnostic mode)",
-    None: "—",
-}
-
-
-def _diag_banner(diag: dict) -> tuple[str, str]:
-    """Computed from the stage results, not inferred separately -- one
-    banner, one source of truth. Playback (stage 7) can't be known at
-    Python-render time (it happens async in the browser after this
-    renders), so a successful synthesis reports "generated" here and
-    points at the live playback test below for the final word."""
-    outcome = diag["final_outcome"]
-    if outcome in ("success", "success_cached"):
-        return ("🟢", "Audio Generated — confirm playback below ↓")
-    if outcome == "missing_secret":
-        return ("🔴", "Missing API Key")
-    if outcome == "auth_failed":
-        return ("🔴", "ElevenLabs Authentication Failed")
-    if outcome == "api_rejected":
-        return ("🔴", f"ElevenLabs Rejected Request (HTTP {diag.get('http_status')})")
-    if outcome == "network_failure":
-        return ("🔴", "Network Failure Reaching ElevenLabs")
-    if outcome == "empty_audio":
-        return ("🔴", "Audio Generation Failed (Empty Response)")
-    if outcome == "voice_not_registered":
-        return ("🔴", "Voice Standard Not Registered")
-    if outcome == "empty_text":
-        return ("⚪", "No Transcript To Speak")
-    return ("🔴", "Unknown Failure")
-
-
-def _render_voice_diagnostics(diag: dict, dom_key: str):
-    """TEMPORARY -- Studio Mode only. Renders the 9-stage pass/fail report
-    plus a live in-browser playback test. Never shows the API key value --
-    only booleans, HTTP status, byte counts, duration, and the voice ID
-    (not a secret; already public in the governed registry)."""
-    emoji, label = _diag_banner(diag)
-    with st.expander("🔬 Sage Voice Diagnostics — TEMPORARY, Studio Mode only", expanded=True):
-        st.markdown(f"### {emoji} {label}")
-        st.caption("Remove this panel once the silent-speech root cause is confirmed.")
-
-        st.markdown(f"**1. Streamlit Secret present:** {'✅ Yes' if diag['secret_present'] else '❌ No'}")
-        st.markdown(f"**2. Environment bootstrap:** {'✅ Copied into os.environ' if diag['env_bootstrap'] else '❌ Not in os.environ'}")
-        st.markdown(f"**3. Provider availability:** {'✅ Available' if diag['provider_available'] else '❌ Unavailable'}")
-        if diag["registry_resolved"]:
-            st.markdown(f"**4. Voice registry:** ✅ SVS-1 resolved — provider=`{diag['provider']}`, voice_id=`{diag['voice_id']}`")
-        else:
-            st.markdown("**4. Voice registry:** ❌ SVS-1 did not resolve")
-        if diag["http_attempted"]:
-            st.markdown(f"**5. ElevenLabs request:** ✅ Attempted — HTTP `{diag['http_status']}` in `{diag['http_duration_ms']}ms`")
-        else:
-            st.markdown("**5. ElevenLabs request:** ⏭️ Not attempted (blocked at an earlier stage)")
-        st.markdown(f"**6. Response validation:** `{diag['bytes_received']}` bytes received — {'✅ valid audio' if diag['valid_audio'] else '❌ invalid/empty'}")
-        st.markdown("**7. Playback:** see live test below ↓" if diag["audio_bytes"] else "**7. Playback:** ⏭️ No audio was generated to test")
-        st.markdown(f"**8. Final outcome:** `{diag['final_outcome']}`")
-        st.markdown(f"**9. Cache source:** {_DIAG_CACHE_LABELS.get(diag['cache_source'], '—')}")
-
-        if diag["audio_bytes"]:
-            st.markdown("---")
-            st.caption(
-                "Live playback test — a second copy of this clip, self-contained so the "
-                "result below is genuinely observed, not assumed. If muted or silent, this "
-                "reports it as blocked rather than staying silent about it."
-            )
-            b64 = base64.b64encode(diag["audio_bytes"]).decode("ascii")
-            import streamlit.components.v1 as components
-            components.html(
-                f"""
-                <div id="result" style="font-family:sans-serif;font-size:14px;color:#F0EDE8;
-                     background:#141414;padding:10px 14px;border-radius:8px;">⏳ Testing browser playback…</div>
-                <audio id="diag-audio" autoplay>
-                  <source src="data:audio/mpeg;base64,{b64}">
-                </audio>
-                <script>
-                  var a = document.getElementById("diag-audio");
-                  var r = document.getElementById("result");
-                  var p = a.play();
-                  if (p !== undefined) {{
-                    p.then(function() {{
-                      r.innerHTML = "🟢 Playback succeeded — the browser allowed autoplay.";
-                      r.style.color = "#22C55E";
-                    }}).catch(function(err) {{
-                      r.innerHTML = "🟡 Playback blocked by the browser: " + err.name + " — " + err.message;
-                      r.style.color = "#F59E0B";
-                    }});
-                  }}
-                </script>
-                """,
-                height=60,
-            )
-
-# ── END TEMPORARY Sage Voice Diagnostics block ──────────────────────────────
-
-
 def render_moment(moment: str, key: str, context_summary: str = "", **context) -> bool:
     """Render Sage's presence card for one narrated moment.
 
@@ -272,18 +170,9 @@ def render_moment(moment: str, key: str, context_summary: str = "", **context) -
     slot_used = st.session_state.get("sage_audio_slot_used_this_run", False)
     can_use_audio_slot = should_speak_audio and not muted and had_interaction and not slot_used
 
-    # TEMPORARY (Sage Voice Diagnostics): in Studio Mode, capture the full
-    # diagnostics dict from the same real call Creator Mode makes -- one
-    # implementation (_synthesize_core), never a second parallel path.
-    studio_mode = bool(st.session_state.get("studio_mode"))
-    diag = None
     audio_bytes = None
     if can_use_audio_slot:
-        if studio_mode:
-            diag = sage_voice._synthesize_core(transcript)
-            audio_bytes = diag["audio_bytes"]
-        else:
-            audio_bytes = sage_voice.synthesize(transcript)
+        audio_bytes = sage_voice.synthesize(transcript)
         if audio_bytes:
             st.session_state["sage_audio_slot_used_this_run"] = True
             st.session_state["sage_last_played_message_id"] = key
@@ -318,11 +207,6 @@ def render_moment(moment: str, key: str, context_summary: str = "", **context) -
             if st.button("↺ Repeat Last Guidance", key=f"sage_repeat_btn_{key}"):
                 st.session_state[repeat_flag] = True
                 st.rerun()
-
-    # TEMPORARY (Sage Voice Diagnostics): Studio Mode only, rendered outside
-    # the card. Creator Mode never sees `diag` at all (it's None there).
-    if diag is not None:
-        _render_voice_diagnostics(diag, key)
 
     return True
 
