@@ -46,7 +46,57 @@ _bootstrap_demo()
 # Sage first-arrival fix: must run before any page renders, on every single
 # script execution -- see ui/sage.py::begin_script_run() for why.
 import ui.sage as _sage
-_sage.begin_script_run()
+
+if hasattr(_sage, "begin_script_run"):
+    _sage.begin_script_run()
+else:
+    # ── TEMPORARY -- P0 Cloud import diagnostic. The deployed environment is
+    # raising AttributeError on _sage.begin_script_run() despite the local
+    # source and full test suite being clean. This proves exactly what
+    # module Cloud actually imported, without ever printing secret values.
+    # Remove this whole block once the module-resolution mismatch is found.
+    import subprocess
+
+    def _diag_git_commit() -> str:
+        repo_root = Path(__file__).parent.parent
+        try:
+            out = subprocess.run(
+                ["git", "rev-parse", "HEAD"],
+                cwd=str(repo_root), capture_output=True, text=True, timeout=5,
+            )
+            if out.returncode == 0 and out.stdout.strip():
+                return out.stdout.strip()
+        except Exception:
+            pass
+        try:
+            head = (repo_root / ".git" / "HEAD").read_text().strip()
+            if head.startswith("ref:"):
+                ref_path = repo_root / ".git" / head.split(" ", 1)[1].strip()
+                return ref_path.read_text().strip()
+            return head
+        except Exception:
+            return "unavailable"
+
+    _sage_attrs = sorted(
+        a for a in dir(_sage)
+        if not a.startswith("_") and (a.startswith("begin") or a.startswith("sage"))
+    )
+    _relevant_paths = [p for p in sys.path if "musicworks" in p.lower() or p.rstrip("/\\").lower().endswith("v2")]
+
+    st.error("⚠️ Sage Startup Diagnostic — `begin_script_run()` was not found on the imported `_sage` module.")
+    st.code(
+        "\n".join([
+            f"_sage.__file__            = {getattr(_sage, '__file__', 'unknown')}",
+            f"hasattr begin_script_run  = False",
+            f"public begin_/sage_ attrs = {_sage_attrs}",
+            f"deployed git commit       = {_diag_git_commit()}",
+            f"python version            = {sys.version.split()[0]}",
+            f"sys.path (relevant)       = {_relevant_paths}",
+        ]),
+        language="text",
+    )
+    st.stop()
+    # ── END TEMPORARY diagnostic block ──────────────────────────────────────
 
 inject_styles()
 page = nav_sidebar()
