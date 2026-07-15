@@ -17,10 +17,10 @@ import base64
 
 import streamlit as st
 
-from execution.brand_asset_registry import AssetNotFoundError, get_asset_metadata, get_derivative_path
 from execution.sage import history, narrator, prefs
 from execution.sage import voice as sage_voice
 from ui.components import render_html
+from ui.sage_presence import avatar_html
 
 
 def _is_muted() -> bool:
@@ -76,27 +76,6 @@ def _catch_up_pending_greeting():
         st.session_state["sage_last_played_message_id"] = pending["key"]
         if pending["key"] == "home_welcome":
             st.session_state["sage_first_greeting_played"] = True
-
-
-def avatar_html(variant: str = "avatar_square", width: int = 64) -> str:
-    """The one accessible way to render Sage's avatar anywhere in the app.
-
-    st.image() in this Streamlit version has no `alt` parameter -- it emits
-    alt="0" by default, which fails real accessibility requirements. This
-    renders a plain <img> instead, with alt text sourced from the governed
-    accessibility_description in the asset registry (never a filename, per
-    that registry's own test suite). Returns "" if the asset can't resolve
-    -- callers simply render nothing rather than a broken image.
-    """
-    try:
-        path = get_derivative_path("SAGE-AVATAR-1", variant)
-        meta = get_asset_metadata("SAGE-AVATAR-1")
-    except AssetNotFoundError:
-        return ""
-    alt = meta.get("accessibility_description", "Sage, MindSpark Labs' institutional guide")
-    ext = path.suffix.lstrip(".") or "webp"
-    b64 = base64.b64encode(path.read_bytes()).decode("ascii")
-    return f'<img src="data:image/{ext};base64,{b64}" width="{width}" alt="{alt}" style="border-radius:8px;display:block;">'
 
 
 # ── DS-1: restrained motion only, and only while actually speaking.

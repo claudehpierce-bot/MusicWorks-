@@ -27,6 +27,33 @@ def run():
     from execution.voice_registry import VoiceNotFoundError, resolve_voice
     from execution.sage import narrator, voice as sage_voice, history, prefs
 
+    # ── Circular import guard ────────────────────────────────────────────────
+    # ui.sage imports ui.components (for render_html) at module level. If
+    # ui.components ever imports ui.sage back, Python can hand a caller a
+    # partially-initialized ui.sage module depending on import order -- this
+    # is exactly what took production down (Cloud diagnostic showed
+    # ui.sage.__file__ correct but begin_script_run() absent). Both
+    # orderings must produce a fully initialized module, and the source
+    # itself must never reintroduce the back-edge.
+    import re as _re
+    components_src = (Path(__file__).parent.parent / "ui" / "components.py").read_text(encoding="utf-8")
+    check(
+        "ui/components.py contains no import of ui.sage",
+        not _re.search(r"import\s+ui\.sage\b|from\s+ui\.sage\s+import", components_src),
+    )
+
+    for mod in ("ui.sage", "ui.components"):
+        sys.modules.pop(mod, None)
+    import ui.sage as _sage_order_a
+    import ui.components as _components_order_a
+    check("ui.sage imported before ui.components is fully initialized", hasattr(_sage_order_a, "begin_script_run"))
+
+    for mod in ("ui.sage", "ui.components"):
+        sys.modules.pop(mod, None)
+    import ui.components as _components_order_b
+    import ui.sage as _sage_order_b
+    check("ui.components imported before ui.sage is fully initialized", hasattr(_sage_order_b, "begin_script_run"))
+
     # ── Voice registry ───────────────────────────────────────────────────────
     provider, voice_id = resolve_voice("SVS-1")
     check("SVS-1 resolves to elevenlabs", provider == "elevenlabs")

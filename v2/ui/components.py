@@ -57,8 +57,8 @@ def _sage_nav_presence():
     ui/sage.py::render_moment, called from Home, the Wizard, the Creative
     Brief, and the Boardroom)."""
     try:
-        import ui.sage as sage
-        avatar = sage.avatar_html("avatar_small", width=36)
+        from ui.sage_presence import avatar_html
+        avatar = avatar_html("avatar_small", width=36)
     except Exception:
         return
     if not avatar:
